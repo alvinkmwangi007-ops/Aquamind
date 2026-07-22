@@ -1,0 +1,6 @@
+ /* src/styles/DailyLogForm.css */
+.daily-form {
+  display: flex;
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
