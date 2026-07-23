@@ -1,0 +1,7 @@
+
+/* src/styles/GoalSetting.css */
+.goal-form {
+  display: flex;
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
