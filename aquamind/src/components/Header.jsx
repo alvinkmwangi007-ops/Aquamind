@@ -1,5 +1,5 @@
 // src/components/Header.jsx
-import './Header.css';
+import '../styles/Header.css';
 import logo from "../assets/waterdrop.png";
 
 export default function Header() {

@@ -1,0 +1,12 @@
+
+ /* src/styles/ProgressTracker.css */
+.progress {
+  background: #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+  margin: 1rem 0;
+}
+.bar {
+  background: #2563eb;
+  height: 20px;
+}
