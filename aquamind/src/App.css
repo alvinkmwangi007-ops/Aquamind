@@ -1,0 +1,29 @@
+/* AquaMind App Layout Styles */
+
+.app-container {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.section {
+  margin-bottom: 2rem;
+}
+
+.section h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #2563eb; /* AquaMind deep blue */
+  margin-bottom: 1rem;
+}
+
+.flex-row {
+  display: flex;
+  gap: 1rem;
+}
+
+.flex-column {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
