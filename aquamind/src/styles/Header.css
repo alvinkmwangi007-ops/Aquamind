@@ -10,3 +10,18 @@
   height: 40px;
   margin-right: 10px;
 }
+nav {
+  margin-left: auto;
+  display: flex;
+  gap: 1rem;
+}
+
+nav a {
+  color: white;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+nav a:hover {
+  text-decoration: underline;
+}
