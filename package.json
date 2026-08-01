@@ -1,0 +1,17 @@
+{
+  "name": "aquamind",
+  "private": true,
+  "version": "0.0.0",
+  "engines": {
+    "node": ">=18"
+  },
+  "workspaces": [
+    "aquamind/client"
+  ],
+  "scripts": {
+    "dev": "npm --workspace aquamind/client run dev",
+    "build": "npm --workspace aquamind/client run build",
+    "preview": "npm --workspace aquamind/client run preview",
+    "lint": "npm --workspace aquamind/client run lint"
+  }
+}
