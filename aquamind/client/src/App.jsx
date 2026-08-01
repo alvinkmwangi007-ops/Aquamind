@@ -1,8 +1,7 @@
 // src/App.jsx
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import Home from "./pages/Home";
-import History from "./pages/History";
-import Settings from "./pages/Settings";
+import { Home, History, Settings } from "./components";
+import "./styles.css";
 
 export default function App() {
   return (
