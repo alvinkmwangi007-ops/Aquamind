@@ -1,5 +1,5 @@
 {
-  "version": 3,
+  "version": 2,
   "builds": [
     {
       "src": "package.json",
@@ -8,5 +8,7 @@
         "distDir": "aquamind/client/dist"
       }
     }
-  ]
+  ],
+  "installCommand": "npm --prefix aquamind/client install",
+  "buildCommand": "npm run build"
 }
