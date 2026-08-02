@@ -11,12 +11,54 @@ import {
   setGoal,
   getLogs as getLogsLocalStorage,
   getGoal as getGoalLocalStorage,
+  login,
+  currentUser,
+  clearToken,
+  getToken,
 } from "./api";
 
 // ============================================================================
 // Header Component
 // ============================================================================
 export function Header() {
+  const [showLogin, setShowLogin] = useState(false);
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        if (getToken()) {
+          const u = await currentUser();
+          setUser(u);
+        }
+      } catch (err) {
+        console.warn("No current user", err);
+        setUser(null);
+      }
+    };
+    loadUser();
+  }, []);
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await login(username, password);
+      if (res.user) setUser(res.user);
+      setShowLogin(false);
+      setUsername("");
+      setPassword("");
+    } catch (err) {
+      alert(err.message || "Login failed");
+    }
+  };
+
+  const handleLogout = () => {
+    clearToken();
+    setUser(null);
+  };
+
   return (
     <header className="header">
       <img src={logo} alt="AquaMind logo" className="logo" />
@@ -26,6 +68,25 @@ export function Header() {
         <Link to="/history">History</Link>
         <Link to="/settings">Settings</Link>
       </nav>
+      <div className="auth">
+        {user ? (
+          <>
+            <span className="user">{user.username}</span>
+            <button onClick={handleLogout}>Logout</button>
+          </>
+        ) : (
+          <>
+            <button onClick={() => setShowLogin((s) => !s)}>{showLogin ? "Close" : "Login"}</button>
+            {showLogin && (
+              <form className="login-form" onSubmit={handleLogin}>
+                <input value={username} onChange={(e) => setUsername(e.target.value)} placeholder="username" />
+                <input value={password} onChange={(e) => setPassword(e.target.value)} placeholder="password" type="password" />
+                <button type="submit">Sign in</button>
+              </form>
+            )}
+          </>
+        )}
+      </div>
     </header>
   );
 }
