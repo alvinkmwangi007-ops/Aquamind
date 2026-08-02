@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: aquamind-backend
+    env: python
+    plan: free
+    region: oregon
+    buildCommand: pip install -r server/requirements.txt
+    startCommand: gunicorn server.app:app
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: PYTHONUNBUFFERED
+        value: 1
+    healthCheckPath: /
+    autoDeploy: true
