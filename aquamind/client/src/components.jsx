@@ -11,52 +11,28 @@ import {
   setGoal,
   getLogs as getLogsLocalStorage,
   getGoal as getGoalLocalStorage,
-  login,
-  currentUser,
-  clearToken,
-  getToken,
 } from "./api";
+import { useAuth } from "./auth";
 
 // ============================================================================
 // Header Component
 // ============================================================================
 export function Header() {
+  const { user, login, logout } = useAuth();
   const [showLogin, setShowLogin] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [user, setUser] = useState(null);
-
-  useEffect(() => {
-    const loadUser = async () => {
-      try {
-        if (getToken()) {
-          const u = await currentUser();
-          setUser(u);
-        }
-      } catch (err) {
-        console.warn("No current user", err);
-        setUser(null);
-      }
-    };
-    loadUser();
-  }, []);
 
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const res = await login(username, password);
-      if (res.user) setUser(res.user);
+      await login(username, password);
       setShowLogin(false);
       setUsername("");
       setPassword("");
     } catch (err) {
       alert(err.message || "Login failed");
     }
-  };
-
-  const handleLogout = () => {
-    clearToken();
-    setUser(null);
   };
 
   return (
@@ -72,7 +48,7 @@ export function Header() {
         {user ? (
           <>
             <span className="user">{user.username}</span>
-            <button onClick={handleLogout}>Logout</button>
+            <button onClick={logout}>Logout</button>
           </>
         ) : (
           <>
@@ -98,10 +74,17 @@ export function DailyLogForm({ onAdd, onError }) {
   const [amount, setAmount] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const { user } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!amount) return;
+    if (!user) {
+      const msg = "Please log in to add hydration logs.";
+      if (onError) onError(msg);
+      alert(msg);
+      return;
+    }
 
     setLoading(true);
     setError(null);
