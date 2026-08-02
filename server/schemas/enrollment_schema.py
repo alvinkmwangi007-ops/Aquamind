@@ -1,5 +1,6 @@
-from extensions import ma
-from models.enrollment import Enrollment
+from server.extensions import ma
+from server.models.enrollment import Enrollment
+from server.schemas.user_schema import UserPublicSchema
 
 
 class EnrollmentSchema(ma.SQLAlchemyAutoSchema):
@@ -8,5 +9,5 @@ class EnrollmentSchema(ma.SQLAlchemyAutoSchema):
         load_instance = True
         include_fk = True
 
-    user = ma.Nested("UserSchema", exclude=("logs", "goals", "reminders", "activities", "enrollments"), many=False)
+    user = ma.Nested(UserPublicSchema, many=False)
     course = ma.Nested("CourseSchema", exclude=("enrollments",), many=False)

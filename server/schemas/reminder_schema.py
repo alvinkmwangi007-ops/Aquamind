@@ -1,5 +1,5 @@
-from extensions import ma
-from models.reminder import Reminder
+from server.extensions import ma
+from server.models.reminder import Reminder
 
 
 class ReminderSchema(ma.SQLAlchemyAutoSchema):

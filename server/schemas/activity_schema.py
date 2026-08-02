@@ -1,5 +1,6 @@
-from extensions import ma
-from models.activity import Activity
+from server.extensions import ma
+from server.models.activity import Activity
+from server.schemas.user_schema import UserPublicSchema
 
 
 class ActivitySchema(ma.SQLAlchemyAutoSchema):
@@ -8,4 +9,4 @@ class ActivitySchema(ma.SQLAlchemyAutoSchema):
         load_instance = True
         include_fk = True
 
-    user = ma.Nested("UserSchema", exclude=("logs", "goals", "reminders", "activities", "enrollments"), many=False)
+    user = ma.Nested(UserPublicSchema, many=False)

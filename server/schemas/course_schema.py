@@ -1,5 +1,5 @@
-from extensions import ma
-from models.course import Course
+from server.extensions import ma
+from server.models.course import Course
 
 
 class CourseSchema(ma.SQLAlchemyAutoSchema):

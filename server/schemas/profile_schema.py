@@ -1,5 +1,5 @@
-from extensions import ma
-from models.profile import Profile
+from server.extensions import ma
+from server.models.profile import Profile
 
 
 class ProfileSchema(ma.SQLAlchemyAutoSchema):

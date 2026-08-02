@@ -1,5 +1,5 @@
-from extensions import ma
-from models.goal import Goal
+from server.extensions import ma
+from server.models.goal import Goal
 
 
 class GoalSchema(ma.SQLAlchemyAutoSchema):
