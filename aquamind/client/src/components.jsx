@@ -37,10 +37,15 @@ export function Header() {
 
   return (
     <header className="header">
-      <img src={logo} alt="AquaMind logo" className="logo" />
-      <h1>AquaMind</h1>
+      <div className="brand">
+        <img src={logo} alt="AquaMind logo" className="logo" />
+        <div>
+          <p className="eyebrow">AquaMind</p>
+          <h1>Hydration Dashboard</h1>
+        </div>
+      </div>
       <nav>
-        <Link to="/">Home</Link>
+        <Link to="/">Overview</Link>
         <Link to="/history">History</Link>
         <Link to="/settings">Settings</Link>
       </nav>
@@ -52,7 +57,7 @@ export function Header() {
           </>
         ) : (
           <>
-            <button onClick={() => setShowLogin((s) => !s)}>{showLogin ? "Close" : "Login"}</button>
+            <button className="ghost" onClick={() => setShowLogin((s) => !s)}>{showLogin ? "Close" : "Login"}</button>
             {showLogin && (
               <form className="login-form" onSubmit={handleLogin}>
                 <input value={username} onChange={(e) => setUsername(e.target.value)} placeholder="username" />
@@ -262,10 +267,10 @@ export function HistoryView({ history = [], loading = false, error = null, onDel
 export function Home() {
   const [current, setCurrent] = useState(0);
   const [goal, setGoal] = useState(2000);
+  const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Fetch goal on mount
   useEffect(() => {
     const loadGoal = async () => {
       try {
@@ -273,34 +278,33 @@ export function Home() {
         setGoal(goalData.goalAmount || 2000);
       } catch (err) {
         console.error("Failed to fetch goal:", err);
-        // Fallback to localStorage
         setGoal(getGoalLocalStorage());
       }
     };
     loadGoal();
   }, []);
 
-  // Fetch logs on mount
   useEffect(() => {
     const loadLogs = async () => {
       setLoading(true);
       setError(null);
       try {
-        const logs = await fetchLogs();
+        const fetched = await fetchLogs();
+        setLogs(fetched.data || fetched);
         const today = new Date().toDateString();
-        const todayTotal = logs
-          .filter((log) => new Date(log.date || log.createdAt).toDateString() === today)
-          .reduce((sum, log) => sum + log.amount, 0);
+        const todayTotal = (fetched.data || fetched)
+          .filter((log) => new Date(log.date || log.logged_at || log.createdAt).toDateString() === today)
+          .reduce((sum, log) => sum + (log.amount_ml || log.amount || 0), 0);
         setCurrent(todayTotal);
       } catch (err) {
         console.error("Failed to fetch logs:", err);
-        // Fallback to localStorage
         const localLogs = getLogsLocalStorage();
         const today = new Date().toDateString();
         const todayTotal = localLogs
           .filter((log) => new Date(log.date).toDateString() === today)
           .reduce((sum, log) => sum + log.amount, 0);
         setCurrent(todayTotal);
+        setLogs(localLogs);
       } finally {
         setLoading(false);
       }
@@ -309,11 +313,12 @@ export function Home() {
   }, []);
 
   const handleAddLog = (newLog) => {
-    setCurrent((prev) => prev + newLog.amount);
+    setCurrent((prev) => prev + (newLog.amount_ml || newLog.amount || 0));
+    setLogs((prev) => [newLog, ...prev]);
   };
 
   const handleSetGoal = (newGoal) => {
-    setGoal(newGoal.goalAmount || newGoal);
+    setGoal(newGoal.daily_target_ml || newGoal.goalAmount || newGoal);
   };
 
   const handleError = (errorMsg) => {
@@ -321,15 +326,78 @@ export function Home() {
     setTimeout(() => setError(null), 5000);
   };
 
+  const activeLogs = logs.slice(0, 5);
+  const goalPct = Math.min((current / goal) * 100, 100);
+
   return (
-    <div className="app-container">
+    <div className="app-container dashboard">
       <Header />
-      {error && <div className="alert error-banner">{error}</div>}
-      <div className="section flex-row">
-        <DailyLogForm onAdd={handleAddLog} onError={handleError} />
-        <GoalSetting onSetGoal={handleSetGoal} onError={handleError} />
-      </div>
-      <ProgressTracker current={current} goal={goal} loading={loading} />
+      <section className="hero-card card">
+        <div>
+          <p className="eyebrow">Main Hydration Center</p>
+          <h2>Daily Wellness Overview</h2>
+          <p>Track your intake, stay hydrated, and hit your goal with a clean dashboard.</p>
+        </div>
+        <div className="hero-stats">
+          <div>
+            <span>Today</span>
+            <strong>{current} ml</strong>
+          </div>
+          <div>
+            <span>Goal</span>
+            <strong>{goal} ml</strong>
+          </div>
+          <div>
+            <span>Entries</span>
+            <strong>{logs.length}</strong>
+          </div>
+        </div>
+      </section>
+
+      <section className="dashboard-grid">
+        <div className="summary-card card">
+          <div className="summary-head">
+            <h3>Hydration Status</h3>
+            <span>{Math.round(goalPct)}%</span>
+          </div>
+          <div className="progress status-progress">
+            <div className="bar" style={{ width: `${goalPct}%` }}></div>
+          </div>
+          <p>{current} of {goal} ml consumed today.</p>
+        </div>
+
+        <div className="summary-card card">
+          <h3>Quick Actions</h3>
+          <DailyLogForm onAdd={handleAddLog} onError={handleError} />
+        </div>
+
+        <div className="summary-card card full-height">
+          <h3>Goal Control</h3>
+          <GoalSetting onSetGoal={handleSetGoal} onError={handleError} />
+        </div>
+
+        <div className="summary-card card log-feed">
+          <div className="summary-head">
+            <h3>Recent Log Entries</h3>
+            <span>{logs.length} total</span>
+          </div>
+          <div className="log-list">
+            {activeLogs.length === 0 ? (
+              <p className="info-msg">No logs yet. Add your first sip.</p>
+            ) : (
+              activeLogs.map((log) => (
+                <div key={log.id || log.logged_at || log.date} className="log-item">
+                  <div>
+                    <strong>{log.amount_ml || log.amount} ml</strong>
+                    <p>{new Date(log.logged_at || log.date || log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                  </div>
+                  <span>{new Date(log.logged_at || log.date || log.createdAt).toLocaleDateString()}</span>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

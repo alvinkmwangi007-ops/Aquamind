@@ -91,10 +91,151 @@ input:disabled {
 /* ============================================================================
    App Layout
    ============================================================================ */
+body {
+  margin: 0;
+  font-family: 'Inter', Arial, sans-serif;
+  background: radial-gradient(circle at top left, rgba(37,99,235,0.15), transparent 35%),
+    linear-gradient(180deg, #f8fafc 0%, #eff6ff 100%);
+  color: #1f2937;
+}
+
 .app-container {
-  max-width: 960px;
+  max-width: 1140px;
   margin: 0 auto;
-  padding: 2rem;
+  padding: 2rem 2rem 4rem;
+}
+
+.dashboard {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.hero-card {
+  display: flex;
+  justify-content: space-between;
+  gap: 2rem;
+  background: linear-gradient(135deg, #ffffff, #eef4ff);
+  border: 1px solid rgba(37, 99, 235, 0.12);
+}
+
+.hero-card h2 {
+  margin: 0.5rem 0 0.75rem;
+  font-size: clamp(1.8rem, 2.4vw, 2.4rem);
+}
+
+.hero-card p {
+  color: #4b5563;
+  line-height: 1.7;
+}
+
+.hero-stats {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: center;
+}
+
+.hero-stats div {
+  background: #fff;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  padding: 1rem 1.2rem;
+  text-align: center;
+}
+
+.hero-stats span {
+  display: block;
+  color: #6b7280;
+  margin-bottom: 0.35rem;
+}
+
+.hero-stats strong {
+  font-size: 1.4rem;
+  color: #1d4ed8;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 1.5rem;
+}
+
+.summary-card {
+  grid-column: span 4;
+  padding: 1.5rem;
+  min-height: 240px;
+}
+
+.summary-card.full-height {
+  grid-column: span 4;
+  min-height: 360px;
+}
+
+.summary-card.log-feed {
+  grid-column: span 8;
+}
+
+.summary-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.summary-head h3 {
+  margin: 0;
+}
+
+.summary-head span {
+  color: #2563eb;
+  font-weight: 700;
+}
+
+.status-progress {
+  background: #e0f2fe;
+  border-radius: 999px;
+  overflow: hidden;
+  height: 16px;
+  margin: 1rem 0;
+}
+
+.status-progress .bar {
+  background: linear-gradient(90deg, #2563eb, #60a5fa);
+  height: 100%;
+}
+
+.log-list {
+  display: grid;
+  gap: 0.75rem;
+  max-height: 310px;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+
+.log-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 0.9rem 1rem;
+}
+
+.log-item strong {
+  display: block;
+  font-size: 1rem;
+  color: #111827;
+}
+
+.log-item p {
+  margin: 0.25rem 0 0;
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.hero-card, .summary-card, .card {
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
 }
 
 .section {
@@ -102,9 +243,9 @@ input:disabled {
 }
 
 .section h2 {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #2563eb;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1d4ed8;
   margin-bottom: 1rem;
 }
 
@@ -123,11 +264,270 @@ input:disabled {
    Header Component Styles
    ============================================================================ */
 .header {
-  background: #2563eb;
-  color: white;
-  padding: 1rem 2rem;
+  background: transparent;
+  color: #111827;
+  padding: 0;
   display: flex;
   align-items: center;
+  gap: 1rem;
+  justify-content: space-between;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.logo {
+  height: 52px;
+  width: 52px;
+  padding: 0.8rem;
+  background: white;
+  border-radius: 18px;
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.08);
+}
+
+.eyebrow {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  font-size: 0.75rem;
+  color: #2563eb;
+  font-weight: 700;
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+nav {
+  display: flex;
+  gap: 1.2rem;
+}
+
+nav a {
+  color: #475569;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.2s;
+}
+
+nav a:hover {
+  color: #1d4ed8;
+}
+
+.auth {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.auth .user {
+  color: #475569;
+  font-weight: 600;
+}
+
+button {
+  cursor: pointer;
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  padding: 0.85rem 1.25rem;
+  font-weight: 600;
+  transition: transform 0.2s, background 0.2s;
+}
+
+button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: #1d4ed8;
+}
+
+button:disabled {
+  background: #cbd5e1;
+  cursor: not-allowed;
+}
+
+button.ghost {
+  background: rgba(37, 99, 235, 0.08);
+  color: #1d4ed8;
+}
+
+input {
+  border: 1px solid #dbeafe;
+  border-radius: 14px;
+  padding: 0.9rem 1rem;
+  background: #fff;
+  color: #111827;
+  width: 100%;
+}
+
+input:focus {
+  outline: 3px solid rgba(37, 99, 235, 0.15);
+}
+
+input:disabled {
+  background: #f8fafc;
+  cursor: not-allowed;
+}
+
+.login-form {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem;
+  border-radius: 18px;
+  background: rgba(255,255,255,0.92);
+  border: 1px solid #dbeafe;
+}
+
+/* ============================================================================
+   DailyLogForm Component Styles
+   ============================================================================ */
+.daily-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+
+.daily-form button,
+.goal-form button {
+  width: 100%;
+}
+
+.daily-form input,
+.goal-form input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* ============================================================================
+   GoalSetting Component Styles
+   ============================================================================ */
+.goal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+
+/* ============================================================================
+   ProgressTracker Component Styles
+   ============================================================================ */
+.progress {
+  background: #e5e7eb;
+  border-radius: 12px;
+  overflow: hidden;
+  margin: 1rem 0;
+}
+
+.progress .bar {
+  background: #2563eb;
+  height: 20px;
+  transition: width 0.3s ease;
+}
+
+/* ============================================================================
+   HistoryView Component Styles
+   ============================================================================ */
+.history {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-end;
+  justify-content: center;
+  flex-wrap: wrap;
+  min-height: 150px;
+}
+
+.day {
+  text-align: center;
+  position: relative;
+  padding: 0.5rem;
+}
+
+.day .bar {
+  width: 20px;
+  background: #2563eb;
+  border-radius: 4px;
+  margin-bottom: 0.5rem;
+}
+
+.day p {
+  margin: 0.25rem 0;
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.day .amount {
+  font-weight: bold;
+  color: #2563eb;
+  font-size: 0.9rem;
+}
+
+.delete-btn {
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  font-size: 1rem;
+  cursor: pointer;
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.delete-btn:hover:not(:disabled) {
+  background: #dc2626;
+}
+
+.delete-btn:disabled {
+  background: #fca5a5;
+  cursor: not-allowed;
+}
+
+@media (max-width: 980px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .summary-card,
+  .summary-card.log-feed,
+  .summary-card.full-height {
+    grid-column: span 1;
+  }
+
+  .hero-stats {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 680px) {
+  .app-container {
+    padding: 1.5rem 1rem 3rem;
+  }
+
+  .header,
+  .hero-card {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  nav {
+    flex-wrap: wrap;
+  }
+
+  .hero-stats div {
+    text-align: left;
+  }
 }
 
 .logo {

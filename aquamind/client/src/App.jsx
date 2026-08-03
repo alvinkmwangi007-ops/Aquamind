@@ -1,6 +1,6 @@
 // src/App.jsx
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { Home, History, Settings } from "./components";
+import { Home, History, Settings } from "./components/index.jsx";
 import "./styles.css";
 
 export default function App() {

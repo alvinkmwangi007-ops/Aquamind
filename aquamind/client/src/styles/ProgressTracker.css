@@ -1,12 +1,20 @@
-
- /* src/styles/ProgressTracker.css */
 .progress {
-  background: #e5e7eb;
-  border-radius: 8px;
-  overflow: hidden;
+  background: #f8fafc;
+  border-radius: 20px;
+  padding: 1.2rem;
   margin: 1rem 0;
+  border: 1px solid #dbeafe;
 }
-.bar {
-  background: #2563eb;
-  height: 20px;
+
+.progress .bar {
+  background: linear-gradient(90deg, #2563eb, #60a5fa);
+  height: 18px;
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+.progress p {
+  margin: 1rem 0 0;
+  color: #475569;
+  font-weight: 600;
 }

@@ -5,10 +5,15 @@ import logo from "../assets/waterdrop.png";
 export default function Header() {
   return (
     <header className="header">
-      <img src={logo} alt="AquaMind logo" className="logo" />
-      <h1>AquaMind</h1>
+      <div className="brand">
+        <img src={logo} alt="AquaMind logo" className="logo" />
+        <div>
+          <p className="eyebrow">AquaMind</p>
+          <h1>Hydration Tracker</h1>
+        </div>
+      </div>
       <nav>
-        <Link to="/">Home</Link>
+        <Link to="/">Overview</Link>
         <Link to="/history">History</Link>
         <Link to="/settings">Settings</Link>
       </nav>
