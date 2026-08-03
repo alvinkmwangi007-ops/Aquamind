@@ -1,8 +1,8 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from extensions import db
-from models.activity import Activity
-from schemas.activity_schema import ActivitySchema
+from server.extensions import db
+from server.models.activity import Activity
+from server.schemas.activity_schema import ActivitySchema
 
 activity_bp = Blueprint("activity_bp", __name__)
 activity_schema = ActivitySchema()
@@ -15,7 +15,8 @@ def get_activities():
     identity = get_jwt_identity()
     page = int(request.args.get("page", 1))
     per_page = int(request.args.get("per_page", 10))
-    query = Activity.query.filter_by(user_id=identity["id"]).order_by(Activity.logged_at.desc())
+    user_id = int(identity)
+    query = Activity.query.filter_by(user_id=user_id).order_by(Activity.logged_at.desc())
     results = query.paginate(page=page, per_page=per_page, error_out=False)
     return jsonify({
         "data": activities_schema.dump(results.items),

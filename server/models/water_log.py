@@ -1,4 +1,4 @@
-from extensions import db
+from server.extensions import db
 
 
 class WaterLog(db.Model):

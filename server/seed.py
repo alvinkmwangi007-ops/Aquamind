@@ -1,15 +1,15 @@
 import os
 from faker import Faker
-from app import create_app
-from extensions import db
-from models.user import User
-from models.profile import Profile
-from models.water_log import WaterLog
-from models.goal import Goal
-from models.reminder import Reminder
-from models.activity import Activity
-from models.course import Course
-from models.enrollment import Enrollment
+from server.app import create_app
+from server.extensions import db
+from server.models.user import User
+from server.models.profile import Profile
+from server.models.water_log import WaterLog
+from server.models.goal import Goal
+from server.models.reminder import Reminder
+from server.models.activity import Activity
+from server.models.course import Course
+from server.models.enrollment import Enrollment
 
 
 def seed_data():

@@ -1,8 +1,8 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from extensions import db
-from models.goal import Goal
-from schemas.goal_schema import GoalSchema
+from server.extensions import db
+from server.models.goal import Goal
+from server.schemas.goal_schema import GoalSchema
 
 goal_bp = Blueprint("goal_bp", __name__)
 goal_schema = GoalSchema()
@@ -13,9 +13,10 @@ goals_schema = GoalSchema(many=True)
 @jwt_required()
 def get_goals():
     identity = get_jwt_identity()
+    user_id = int(identity)
     page = int(request.args.get("page", 1))
     per_page = int(request.args.get("per_page", 10))
-    query = Goal.query.filter_by(user_id=identity["id"]).order_by(Goal.set_at.desc())
+    query = Goal.query.filter_by(user_id=user_id).order_by(Goal.set_at.desc())
     results = query.paginate(page=page, per_page=per_page, error_out=False)
     return jsonify({
         "data": goals_schema.dump(results.items),

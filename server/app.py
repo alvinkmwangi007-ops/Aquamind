@@ -2,13 +2,13 @@ import os
 from dotenv import load_dotenv
 from flask import Flask
 from flask_migrate import Migrate
-from extensions import db, ma, cors, jwt
-from controllers.user_controller import user_bp
-from controllers.log_controller import log_bp
-from controllers.goal_controller import goal_bp
-from controllers.reminder_controller import reminder_bp
-from controllers.activity_controller import activity_bp
-from controllers.course_controller import course_bp
+from server.extensions import db, ma, cors, jwt
+from server.controllers.user_controller import user_bp
+from server.controllers.log_controller import log_bp
+from server.controllers.goal_controller import goal_bp
+from server.controllers.reminder_controller import reminder_bp
+from server.controllers.activity_controller import activity_bp
+from server.controllers.course_controller import course_bp
 
 
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), ".env"))

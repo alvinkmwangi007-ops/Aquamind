@@ -14,8 +14,8 @@ config.set_main_option('sqlalchemy.url', current_app.config.get('SQLALCHEMY_DATA
 
 import sys
 sys.path.append('.')
-from app import create_app
-from extensions import db
+from server.app import create_app
+from server.extensions import db
 
 app = create_app()
 

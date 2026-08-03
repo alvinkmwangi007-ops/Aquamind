@@ -1,8 +1,8 @@
 from flask import Blueprint, request, jsonify
-from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
-from extensions import db
-from models.user import User
-from schemas.user_schema import UserSchema
+from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity, get_jwt
+from server.extensions import db
+from server.models.user import User
+from server.schemas.user_schema import UserSchema
 
 user_bp = Blueprint("user_bp", __name__)
 user_schema = UserSchema()
@@ -33,7 +33,7 @@ def login_user():
     if not user or not user.check_password(data.get("password")):
         return jsonify({"message": "Invalid credentials"}), 401
 
-    token = create_access_token(identity={"id": user.id, "role": user.role})
+    token = create_access_token(identity=str(user.id), additional_claims={"role": user.role})
     return jsonify({"access_token": token, "user": user_schema.dump(user)})
 
 
@@ -41,11 +41,11 @@ def login_user():
 @jwt_required()
 def current_user():
     identity = get_jwt_identity()
-    user = User.query.get(identity["id"])
+    user = User.query.get(int(identity))
     return jsonify(user_schema.dump(user))
 
 
-@user_bp.route("/users", methods=["GET"])
+@user_bp.route("/", methods=["GET"])
 @jwt_required()
 def get_users():
     page = int(request.args.get("page", 1))
@@ -60,11 +60,11 @@ def get_users():
     })
 
 
-@user_bp.route("/users/<int:user_id>", methods=["DELETE"])
+@user_bp.route("/<int:user_id>", methods=["DELETE"])
 @jwt_required()
 def delete_user(user_id):
-    identity = get_jwt_identity()
-    if identity["role"] != "admin":
+    claims = get_jwt()
+    if claims.get("role") != "admin":
         return jsonify({"message": "Admin access required"}), 403
 
     user = User.query.get_or_404(user_id)

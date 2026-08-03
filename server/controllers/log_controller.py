@@ -1,9 +1,9 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from sqlalchemy import func
-from extensions import db
-from models.water_log import WaterLog
-from schemas.water_log_schema import WaterLogSchema
+from server.extensions import db
+from server.models.water_log import WaterLog
+from server.schemas.water_log_schema import WaterLogSchema
 
 log_bp = Blueprint("log_bp", __name__)
 log_schema = WaterLogSchema()
@@ -26,7 +26,9 @@ def get_logs():
     per_page = int(request.args.get("per_page", 10))
     identity = get_jwt_identity()
 
-    query = WaterLog.query.filter_by(user_id=identity["id"]).order_by(WaterLog.logged_at.desc())
+    user_id = int(identity)
+
+    query = WaterLog.query.filter_by(user_id=user_id).order_by(WaterLog.logged_at.desc())
     logs = query.paginate(page=page, per_page=per_page, error_out=False)
 
     return jsonify({
@@ -39,9 +41,10 @@ def get_logs():
 @jwt_required()
 def logs_summary():
     identity = get_jwt_identity()
+    user_id = int(identity)
     summary = (
         db.session.query(func.date(WaterLog.logged_at).label("date"), func.sum(WaterLog.amount_ml).label("total_ml"))
-        .filter(WaterLog.user_id == identity["id"])
+        .filter(WaterLog.user_id == user_id)
         .group_by(func.date(WaterLog.logged_at))
         .order_by(func.date(WaterLog.logged_at).desc())
         .all()
