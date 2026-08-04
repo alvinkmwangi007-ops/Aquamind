@@ -38,7 +38,7 @@ export default function Login() {
         <div>
           <p className="eyebrow">Login</p>
           <h2>Sign in to AquaMind</h2>
-          <p>Use the demo accounts below to explore different roles and plan tiers.</p>
+          <p>Enter your account credentials to continue.</p>
         </div>
       </div>
       <div className="login-card card">
@@ -52,7 +52,7 @@ export default function Login() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="admin@example.com"
+              placeholder="you@example.com"
               required
             />
           </label>
@@ -64,7 +64,7 @@ export default function Login() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="admin123"
+              placeholder="Your password"
               required
             />
           </label>
@@ -80,15 +80,6 @@ export default function Login() {
             {loading ? "Signing in..." : "Sign In"}
           </button>
         </form>
-        <div className="login-help">
-          <p>Demo accounts:</p>
-          <ul>
-            <li><strong>Admin:</strong> admin@example.com / admin123</li>
-            <li><strong>Manager:</strong> manager@example.com / manager123</li>
-            <li><strong>Coach:</strong> coach@example.com / coach123</li>
-            <li><strong>User:</strong> user@example.com / user123</li>
-          </ul>
-        </div>
         <p className="copyright">© 2026 AquaMind</p>
       </div>
     </div>
