@@ -1,5 +1,6 @@
 // API Service with CRUD operations using fetch + error handling
 const API_BASE_URL = import.meta.env.VITE_API_URL || "https://aquamind-3.onrender.com/api";
+const GOAL_RECORDS_KEY = "aquamind_goal_records";
 
 function getStoredUserId() {
   const stored = sessionStorage.getItem("aquamind_user") || localStorage.getItem("aquamind_user");
@@ -27,6 +28,30 @@ export function clearToken() {
 function authHeaders() {
   const token = getToken();
   return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+function getGoalRecordsMap() {
+  try {
+    return JSON.parse(localStorage.getItem(GOAL_RECORDS_KEY)) || {};
+  } catch {
+    return {};
+  }
+}
+
+function normalizeGoalData(raw, fallbackGoal = 2000) {
+  if (!raw) return { goalAmount: fallbackGoal, set_at: null };
+
+  if (Array.isArray(raw)) {
+    return normalizeGoalData(raw[0], fallbackGoal);
+  }
+
+  if (raw.data && Array.isArray(raw.data)) {
+    return normalizeGoalData(raw.data[0], fallbackGoal);
+  }
+
+  const goalAmount = Number(raw.daily_target_ml || raw.goalAmount || fallbackGoal);
+  const setAt = raw.set_at || raw.setAt || null;
+  return { goalAmount, daily_target_ml: goalAmount, set_at: setAt };
 }
 
 function asPaginated(items, page, perPage) {
@@ -127,34 +152,48 @@ export async function deleteLog(id) {
  * Fetch user's hydration goal
  */
 export async function fetchGoal() {
+  const userId = getStoredUserId();
   try {
     const response = await fetch(`${API_BASE_URL}/goals`, { headers: { ...authHeaders() } });
     if (!response.ok) {
       throw new Error(`Failed to fetch goal: ${response.statusText}`);
     }
-    return response.json();
+    const data = normalizeGoalData(await response.json(), getGoal());
+    if (data.goalAmount) {
+      saveGoalRecord(data.goalAmount, data.set_at || new Date().toISOString(), userId);
+    }
+    return data;
   } catch {
-    return { goalAmount: getGoal(), daily_target_ml: getGoal() };
+    const local = getGoalRecord(userId);
+    return {
+      goalAmount: local.goalAmount,
+      daily_target_ml: local.goalAmount,
+      set_at: local.setAt,
+    };
   }
 }
 
 /**
  * Create or update user's hydration goal
  */
-export async function setGoal(goalAmount) {
+export async function setGoal(goalAmount, setAt = new Date().toISOString()) {
+  const userId = getStoredUserId();
   try {
     const response = await fetch(`${API_BASE_URL}/goals`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...authHeaders() },
-      body: JSON.stringify({ daily_target_ml: goalAmount }),
+      body: JSON.stringify({ daily_target_ml: goalAmount, set_at: setAt }),
     });
     if (!response.ok) {
       throw new Error(`Failed to set goal: ${response.statusText}`);
     }
-    return response.json();
+    const data = normalizeGoalData(await response.json(), goalAmount);
+    const finalizedSetAt = data.set_at || setAt;
+    saveGoalRecord(data.goalAmount, finalizedSetAt, userId);
+    return { ...data, set_at: finalizedSetAt };
   } catch {
-    saveGoal(goalAmount);
-    return { goalAmount, daily_target_ml: goalAmount };
+    saveGoalRecord(goalAmount, setAt, userId);
+    return { goalAmount, daily_target_ml: goalAmount, set_at: setAt };
   }
 }
 
@@ -226,12 +265,43 @@ export function getLogs() {
  * Save goal to localStorage as fallback
  */
 export function saveGoal(goal) {
-  localStorage.setItem("aquamind_goal", JSON.stringify(goal));
+  saveGoalRecord(goal, new Date().toISOString(), getStoredUserId());
 }
 
 /**
  * Get goal from localStorage as fallback
  */
 export function getGoal() {
-  return JSON.parse(localStorage.getItem("aquamind_goal")) || 2000;
+  return getGoalRecord(getStoredUserId()).goalAmount;
+}
+
+export function saveGoalRecord(goalAmount, setAt, userId = getStoredUserId()) {
+  const records = getGoalRecordsMap();
+  records[String(userId)] = {
+    goalAmount: Number(goalAmount) || 2000,
+    setAt: setAt || new Date().toISOString(),
+  };
+  localStorage.setItem(GOAL_RECORDS_KEY, JSON.stringify(records));
+  localStorage.setItem("aquamind_goal", JSON.stringify(Number(goalAmount) || 2000));
+}
+
+export function getGoalRecord(userId = getStoredUserId()) {
+  const records = getGoalRecordsMap();
+  const record = records[String(userId)];
+  if (record) {
+    return {
+      goalAmount: Number(record.goalAmount) || 2000,
+      setAt: record.setAt || null,
+    };
+  }
+
+  const legacy = JSON.parse(localStorage.getItem("aquamind_goal"));
+  return {
+    goalAmount: Number(legacy) || 2000,
+    setAt: null,
+  };
+}
+
+export function getGoalRecords() {
+  return getGoalRecordsMap();
 }

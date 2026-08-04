@@ -3,13 +3,14 @@ import { useState, useEffect } from "react";
 import Header from "../Header";
 import DailyLogForm from "../DailyLogForm";
 import GoalSetting from "../GoalSetting";
-import { fetchLogs, fetchGoal, createLog, setGoal, getLogs as getLogsLocalStorage, getGoal as getGoalLocalStorage } from "../../api";
+import { fetchLogs, fetchGoal, createLog, setGoal, getLogs as getLogsLocalStorage, getGoalRecord, getGoalRecords } from "../../api";
 import { useAuth } from "../../auth";
 
 export default function Home() {
   const { user, users = [] } = useAuth();
   const [current, setCurrent] = useState(0);
   const [goal, setGoalValue] = useState(2000);
+  const [goalSetAt, setGoalSetAt] = useState(null);
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -18,14 +19,17 @@ export default function Home() {
     const loadGoal = async () => {
       try {
         const goalData = await fetchGoal();
-        setGoalValue(goalData.goalAmount || 2000);
+        setGoalValue(goalData.daily_target_ml || goalData.goalAmount || 2000);
+        setGoalSetAt(goalData.set_at || null);
       } catch (err) {
         console.error("Failed to fetch goal:", err);
-        setGoalValue(getGoalLocalStorage());
+        const localGoal = getGoalRecord(user?.id);
+        setGoalValue(localGoal.goalAmount);
+        setGoalSetAt(localGoal.setAt);
       }
     };
     loadGoal();
-  }, []);
+  }, [user?.id]);
 
   useEffect(() => {
     const loadLogs = async () => {
@@ -67,10 +71,11 @@ export default function Home() {
     }
   };
 
-  const handleSetGoal = async (amount) => {
+  const handleSetGoal = async (amount, requestedSetAt) => {
     try {
-      const newGoal = await setGoal(amount);
+      const newGoal = await setGoal(amount, requestedSetAt);
       setGoalValue(newGoal.daily_target_ml || newGoal.goalAmount || amount);
+      setGoalSetAt(newGoal.set_at || requestedSetAt || null);
     } catch (err) {
       setError(err.message || "Could not save goal.");
       setTimeout(() => setError(null), 5000);
@@ -78,8 +83,10 @@ export default function Home() {
   };
 
   const goalPct = Math.min((current / goal) * 100, 100);
+  const completedGoal = goal > 0 && current >= goal;
   const latestLogs = logs.slice(0, 5);
   const allLogs = getLogsLocalStorage();
+  const goalRecords = getGoalRecords();
   const totalsByUserId = allLogs.reduce((acc, entry) => {
     const userId = Number(entry.user_id || 1);
     const amount = Number(entry.amount_ml || entry.amount || 0);
@@ -91,6 +98,8 @@ export default function Home() {
     ...entry,
     total: totalsByUserId[entry.id] || 0,
     width: Math.round(((totalsByUserId[entry.id] || 0) / maxTotal) * 100),
+    goalAmount: Number(goalRecords[String(entry.id)]?.goalAmount || 2000),
+    goalSetAt: goalRecords[String(entry.id)]?.setAt || null,
   }));
 
   return (
@@ -127,6 +136,13 @@ export default function Home() {
         </div>
       </section>
 
+      {completedGoal && (
+        <section className="card congrats-card" role="status" aria-live="polite">
+          <h3>Congratulations, {user?.name || "Hydration Hero"}!</h3>
+          <p>You reached your daily hydration target of {goal} ml.</p>
+        </section>
+      )}
+
       {user?.role === "admin" && (
         <section className="admin-panel card">
           <div className="summary-head">
@@ -153,7 +169,10 @@ export default function Home() {
                 <div className="user-bar-row" key={entry.id}>
                   <div className="user-meta">
                     <strong>{entry.name}</strong>
-                    <span>{entry.role}</span>
+                    <span>{entry.role} · goal {entry.goalAmount} ml</span>
+                    <span>
+                      Set at: {entry.goalSetAt ? new Date(entry.goalSetAt).toLocaleString() : "Not set"}
+                    </span>
                   </div>
                   <div className="bar-track">
                     <div className="bar-fill" style={{ width: `${entry.width}%` }} />
@@ -199,6 +218,7 @@ export default function Home() {
             <div className="goal-bar-fill" style={{ width: `${Math.min((goal / 4500) * 100, 100)}%` }} />
           </div>
           <p className="goal-bar-caption">Current target: {goal} ml</p>
+          <p className="goal-time">Goal set time: {goalSetAt ? new Date(goalSetAt).toLocaleString() : "Not set yet"}</p>
           <GoalSetting onSetGoal={handleSetGoal} />
           <p className="fine-print">Fine-tune your target based on routine, weather, and activity intensity.</p>
         </div>

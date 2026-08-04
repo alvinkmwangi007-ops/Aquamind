@@ -2,12 +2,13 @@
 import { useState, useEffect } from "react";
 import Header from "../Header";
 import GoalSetting from "../GoalSetting";
-import { fetchGoal, setGoal, getGoal as getGoalLocalStorage } from "../../api";
+import { fetchGoal, setGoal, getGoalRecord } from "../../api";
 import { useAuth } from "../../auth";
 
 export default function Settings() {
   const { user } = useAuth();
   const [goal, setGoalValue] = useState(2000);
+  const [goalSetAt, setGoalSetAt] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [profile, setProfile] = useState({
@@ -22,22 +23,26 @@ export default function Settings() {
       setError(null);
       try {
         const goalData = await fetchGoal();
-        setGoalValue(goalData.goalAmount || 2000);
+        setGoalValue(goalData.daily_target_ml || goalData.goalAmount || 2000);
+        setGoalSetAt(goalData.set_at || null);
       } catch (err) {
         console.error("Failed to fetch goal:", err);
         setError(err.message || "Failed to load goal");
-        setGoalValue(getGoalLocalStorage());
+        const fallback = getGoalRecord(user?.id);
+        setGoalValue(fallback.goalAmount);
+        setGoalSetAt(fallback.setAt);
       } finally {
         setLoading(false);
       }
     };
     loadGoal();
-  }, []);
+  }, [user?.id]);
 
-  const handleSetGoal = async (amount) => {
+  const handleSetGoal = async (amount, requestedSetAt) => {
     try {
-      const newGoal = await setGoal(amount);
+      const newGoal = await setGoal(amount, requestedSetAt);
       setGoalValue(newGoal.daily_target_ml || newGoal.goalAmount || amount);
+      setGoalSetAt(newGoal.set_at || requestedSetAt || null);
     } catch (err) {
       setError(err.message || "Could not save goal.");
       setTimeout(() => setError(null), 5000);
@@ -45,7 +50,7 @@ export default function Settings() {
   };
 
   const applyPreset = (amount) => {
-    handleSetGoal(amount);
+    handleSetGoal(amount, new Date().toISOString());
   };
 
   const updateProfile = (key, value) => {
@@ -69,11 +74,13 @@ export default function Settings() {
           <div className="goal-bar-track" aria-label="Current goal bar graph">
             <div className="goal-bar-fill" style={{ width: `${Math.min((goal / 4500) * 100, 100)}%` }} />
           </div>
+          <p className="goal-time">Set at: {goalSetAt ? new Date(goalSetAt).toLocaleString() : "Not set yet"}</p>
           <small className="fine-print">This bar shows how ambitious your daily target is compared to 4500 ml.</small>
         </div>
         <div className="stat-card card">
           <h3>Active Profile</h3>
           <p>{user?.name || "Member"} · {user?.plan || "free"} plan</p>
+          <p className="goal-time">Last goal update: {goalSetAt ? new Date(goalSetAt).toLocaleString() : "Not set yet"}</p>
           <small className="fine-print">Adjust profile controls below and save your goal to keep routine settings aligned.</small>
         </div>
       </div>
@@ -95,10 +102,10 @@ export default function Settings() {
               <GoalSetting onSetGoal={handleSetGoal} />
             </div>
 
-            <div className="card">
+            <div className="card routine-card">
               <h3>Routine preferences</h3>
               <div className="settings-controls">
-                <label>
+                <label className="pref-field">
                   Reminder frequency
                   <select value={profile.reminderWindow} onChange={(e) => updateProfile("reminderWindow", e.target.value)}>
                     <option value="hourly">Hourly</option>
@@ -106,7 +113,7 @@ export default function Settings() {
                     <option value="every-3-hours">Every 3 hours</option>
                   </select>
                 </label>
-                <label>
+                <label className="pref-field">
                   Activity level
                   <select value={profile.activityLevel} onChange={(e) => updateProfile("activityLevel", e.target.value)}>
                     <option value="low">Low</option>
@@ -114,7 +121,7 @@ export default function Settings() {
                     <option value="high">High</option>
                   </select>
                 </label>
-                <label>
+                <label className="pref-field">
                   Weather mode
                   <select value={profile.weatherMode} onChange={(e) => updateProfile("weatherMode", e.target.value)}>
                     <option value="auto">Auto adjust</option>

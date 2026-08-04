@@ -33,6 +33,7 @@ function buildLastSevenDaySeries(logs, userId) {
 function LineGraph({ points, title }) {
   const max = Math.max(1, ...points.map((point) => point.total));
   const stepX = 240 / Math.max(points.length - 1, 1);
+  const ticks = [max, Math.round(max / 2), 0];
   const coords = points
     .map((point, index) => {
       const x = index * stepX;
@@ -47,9 +48,16 @@ function LineGraph({ points, title }) {
         <h4>{title}</h4>
         <span>7 days</span>
       </div>
-      <svg viewBox="0 0 240 100" role="img" aria-label={`${title} hydration trend`}>
-        <polyline points={coords} fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
+      <div className="line-chart-body">
+        <div className="y-scale" aria-hidden="true">
+          {ticks.map((tick) => (
+            <span key={`${title}-tick-${tick}`}>{tick} ml</span>
+          ))}
+        </div>
+        <svg viewBox="0 0 240 100" role="img" aria-label={`${title} hydration trend`}>
+          <polyline points={coords} fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </div>
       <div className="line-chart-labels">
         {points.map((point) => (
           <span key={`${title}-${point.key}`}>{point.label}</span>
