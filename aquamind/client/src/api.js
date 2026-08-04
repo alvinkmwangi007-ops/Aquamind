@@ -2,12 +2,12 @@
 const API_BASE_URL = import.meta.env.VITE_API_URL || "https://aquamind-3.onrender.com/api";
 
 function getStoredUserId() {
-  const stored = localStorage.getItem("aquamind_user");
-  if (!stored) return null;
+  const stored = sessionStorage.getItem("aquamind_user") || localStorage.getItem("aquamind_user");
+  if (!stored) return 1;
   try {
-    return JSON.parse(stored)?.id || null;
+    return JSON.parse(stored)?.id || 1;
   } catch {
-    return null;
+    return 1;
   }
 }
 

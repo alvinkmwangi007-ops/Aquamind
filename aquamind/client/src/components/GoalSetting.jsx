@@ -1,6 +1,5 @@
 // src/components/GoalSetting.jsx
 import { useState } from "react";
-import '../styles/GoalSetting.css';
 
 export default function GoalSetting({ onSetGoal }) {
   const [goal, setGoal] = useState("");

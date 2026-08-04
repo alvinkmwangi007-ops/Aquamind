@@ -1,5 +1,4 @@
 import { Link } from "react-router-dom";
-import "../styles/Header.css";
 import logo from "../assets/waterdrop.png";
 import { useAuth } from "../auth";
 

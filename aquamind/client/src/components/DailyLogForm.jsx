@@ -1,6 +1,5 @@
 // src/components/DailyLogForm.jsx
 import { useState } from "react";
-import '../styles/DailyLogForm.css';
 
 export default function DailyLogForm({ onAdd }) {
   const [amount, setAmount] = useState("");

@@ -1,6 +1,4 @@
 // src/components/ProgressTracker.jsx
-import '../styles/ProgressTracker.css';
-
 export default function ProgressTracker({ current, goal }) {
   const percent = Math.min((current / goal) * 100, 100);
 

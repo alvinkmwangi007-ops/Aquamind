@@ -1,6 +1,4 @@
 // src/components/HistoryView.jsx
-import '../styles/HistoryView.css';
-
 export default function HistoryView({ history }) {
   return (
     <div className="history card">

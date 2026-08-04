@@ -42,15 +42,30 @@ const mockUsers = {
 
 const STORAGE_KEY = "aquamind_user";
 
+function getStoredAuthUser() {
+  const sessionUser = sessionStorage.getItem(STORAGE_KEY);
+  const localUser = localStorage.getItem(STORAGE_KEY);
+  const raw = sessionUser || localUser;
+  if (!raw) return null;
+
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+function getPublicUsers() {
+  return Object.values(mockUsers).map(({ password, ...user }) => user);
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      setUser(JSON.parse(stored));
-    }
+    const storedUser = getStoredAuthUser();
+    if (storedUser) setUser(storedUser);
     setLoading(false);
   }, []);
 
@@ -62,6 +77,7 @@ export function AuthProvider({ children }) {
     }
 
     const authUser = {
+      id: account.id,
       email: account.email,
       name: account.name,
       role: account.role,
@@ -87,7 +103,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, users: getPublicUsers(), loading, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

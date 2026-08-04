@@ -2,13 +2,12 @@
 import { useState, useEffect } from "react";
 import Header from "../Header";
 import DailyLogForm from "../DailyLogForm";
-import ProgressTracker from "../ProgressTracker";
 import GoalSetting from "../GoalSetting";
 import { fetchLogs, fetchGoal, createLog, setGoal, getLogs as getLogsLocalStorage, getGoal as getGoalLocalStorage } from "../../api";
 import { useAuth } from "../../auth";
 
 export default function Home() {
-  const { user } = useAuth();
+  const { user, users = [] } = useAuth();
   const [current, setCurrent] = useState(0);
   const [goal, setGoalValue] = useState(2000);
   const [logs, setLogs] = useState([]);
@@ -80,6 +79,19 @@ export default function Home() {
 
   const goalPct = Math.min((current / goal) * 100, 100);
   const latestLogs = logs.slice(0, 5);
+  const allLogs = getLogsLocalStorage();
+  const totalsByUserId = allLogs.reduce((acc, entry) => {
+    const userId = Number(entry.user_id || 1);
+    const amount = Number(entry.amount_ml || entry.amount || 0);
+    acc[userId] = (acc[userId] || 0) + amount;
+    return acc;
+  }, {});
+  const maxTotal = Math.max(1, ...Object.values(totalsByUserId));
+  const userBarData = users.map((entry) => ({
+    ...entry,
+    total: totalsByUserId[entry.id] || 0,
+    width: Math.round(((totalsByUserId[entry.id] || 0) / maxTotal) * 100),
+  }));
 
   return (
     <div className="app-container dashboard">
@@ -134,6 +146,23 @@ export default function Home() {
               <p>Admin users can review protected actions and manage the dashboard experience.</p>
             </div>
           </div>
+          <div className="admin-users">
+            <h4>Current users and hydration totals</h4>
+            <div className="user-bars">
+              {userBarData.map((entry) => (
+                <div className="user-bar-row" key={entry.id}>
+                  <div className="user-meta">
+                    <strong>{entry.name}</strong>
+                    <span>{entry.role}</span>
+                  </div>
+                  <div className="bar-track">
+                    <div className="bar-fill" style={{ width: `${entry.width}%` }} />
+                  </div>
+                  <span className="bar-value">{entry.total} ml</span>
+                </div>
+              ))}
+            </div>
+          </div>
         </section>
       )}
 
@@ -158,6 +187,7 @@ export default function Home() {
             <span>Log water</span>
           </div>
           <DailyLogForm onAdd={handleAddLog} />
+          <p className="fine-print">Tip: Add the exact amount you drink each time to keep daily totals accurate.</p>
         </div>
 
         <div className="summary-card card full-height">
@@ -165,7 +195,12 @@ export default function Home() {
             <h3>Daily Goal</h3>
             <span>Update target</span>
           </div>
+          <div className="goal-bar-track" aria-label="Current goal intensity">
+            <div className="goal-bar-fill" style={{ width: `${Math.min((goal / 4500) * 100, 100)}%` }} />
+          </div>
+          <p className="goal-bar-caption">Current target: {goal} ml</p>
           <GoalSetting onSetGoal={handleSetGoal} />
+          <p className="fine-print">Fine-tune your target based on routine, weather, and activity intensity.</p>
         </div>
 
         <div className="summary-card card log-feed">
