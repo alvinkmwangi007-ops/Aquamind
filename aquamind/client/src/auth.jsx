@@ -1,37 +1,46 @@
 import { createContext, useContext, useState, useEffect } from "react";
-import { login as apiLogin, currentUser, clearToken, getToken } from "./api";
 
 const AuthContext = createContext(null);
+const mockUsers = {
+  "admin@example.com": {
+    email: "admin@example.com",
+    name: "Admin User",
+    role: "admin",
+    password: "admin123",
+  },
+  "user@example.com": {
+    email: "user@example.com",
+    name: "Regular User",
+    role: "user",
+    password: "user123",
+  },
+};
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const load = async () => {
-      try {
-        const tok = getToken();
-        if (tok) {
-          const u = await currentUser();
-          setUser(u);
-        }
-      } catch (err) {
-        setUser(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
+    const stored = localStorage.getItem("aquamind_user");
+    if (stored) {
+      setUser(JSON.parse(stored));
+    }
+    setLoading(false);
   }, []);
 
-  const login = async (username, password) => {
-    const res = await apiLogin(username, password);
-    if (res.user) setUser(res.user);
-    return res;
+  const login = async (email, password) => {
+    const user = mockUsers[email.toLowerCase()];
+    if (!user || user.password !== password) {
+      throw new Error("Invalid email or password. Use admin@example.com/admin123 or user@example.com/user123.");
+    }
+    const authUser = { email: user.email, name: user.name, role: user.role };
+    localStorage.setItem("aquamind_user", JSON.stringify(authUser));
+    setUser(authUser);
+    return { user: authUser };
   };
 
   const logout = () => {
-    clearToken();
+    localStorage.removeItem("aquamind_user");
     setUser(null);
   };
 

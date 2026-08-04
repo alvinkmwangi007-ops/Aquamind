@@ -1,5 +1,5 @@
 // API Service with CRUD operations using fetch + error handling
-const API_BASE_URL = import.meta.env.VITE_API_URL || "https://aquamind-2.onrender.com/api";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "/api";
 
 // Auth helpers (store token in localStorage)
 export function setToken(token) {
