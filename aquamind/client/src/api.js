@@ -44,7 +44,7 @@ export async function createLog(amount, date = new Date().toISOString()) {
   const response = await fetch(`${API_BASE_URL}/logs`, {
     method: "POST",
     headers: { "Content-Type": "application/json", ...authHeaders() },
-    body: JSON.stringify({ amount_ml: amount }),
+    body: JSON.stringify({ amount_ml: amount, user_id: 1 }),
   });
   if (!response.ok) {
     throw new Error(`Failed to create log: ${response.statusText}`);
