@@ -1,14 +1,7 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "aquamind/client/dist"
-      }
-    }
-  ],
-  "installCommand": "npm --prefix aquamind/client install",
-  "buildCommand": "npm run build"
+  "rootDirectory": "aquamind/client",
+  "buildCommand": "npm run build",
+  "installCommand": "npm install",
+  "outputDirectory": "dist"
 }
