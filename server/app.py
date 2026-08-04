@@ -32,6 +32,7 @@ def create_app():
     allowed_origins = [
         "https://aquamind-3.vercel.app",
         "https://aquamind-2-client.vercel.app",
+        "https://aquamind-3.onrender.com",
         "http://localhost:5173",
         "http://127.0.0.1:5173",
     ]
