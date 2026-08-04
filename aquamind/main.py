@@ -28,6 +28,13 @@ def create_app():
     app.register_blueprint(reminder_bp, url_prefix="/api")
     app.register_blueprint(activity_bp, url_prefix="/api")
 
+    @app.after_request
+    def add_cors_headers(response):
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        response.headers.add("Access-Control-Allow-Headers", "Content-Type,Authorization")
+        response.headers.add("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS")
+        return response
+
     # Health check route
     @app.route("/")
     def index():
