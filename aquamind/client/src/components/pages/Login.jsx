@@ -8,6 +8,7 @@ export default function Login() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -17,7 +18,7 @@ export default function Login() {
     setLoading(true);
 
     try {
-      await login(email, password);
+      await login(email, password, rememberMe);
       navigate("/");
     } catch (err) {
       setError(err.message || "Login failed.");
@@ -37,7 +38,7 @@ export default function Login() {
         <div>
           <p className="eyebrow">Login</p>
           <h2>Sign in to AquaMind</h2>
-          <p>Use the demo accounts below to test admin and user access.</p>
+          <p>Use the demo accounts below to explore different roles and plan tiers.</p>
         </div>
       </div>
       <div className="login-card card">
@@ -67,6 +68,14 @@ export default function Login() {
               required
             />
           </label>
+          <label className="remember-me">
+            <input
+              type="checkbox"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+            />
+            <span>Remember me</span>
+          </label>
           <button type="submit" disabled={loading}>
             {loading ? "Signing in..." : "Sign In"}
           </button>
@@ -74,10 +83,13 @@ export default function Login() {
         <div className="login-help">
           <p>Demo accounts:</p>
           <ul>
-            <li><strong>Admin</strong>: admin@example.com / admin123</li>
-            <li><strong>User</strong>: user@example.com / user123</li>
+            <li><strong>Admin:</strong> admin@example.com / admin123</li>
+            <li><strong>Manager:</strong> manager@example.com / manager123</li>
+            <li><strong>Coach:</strong> coach@example.com / coach123</li>
+            <li><strong>User:</strong> user@example.com / user123</li>
           </ul>
         </div>
+        <p className="copyright">© 2026 AquaMind</p>
       </div>
     </div>
   );
