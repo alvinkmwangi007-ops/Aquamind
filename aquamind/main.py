@@ -19,7 +19,21 @@ def create_app():
     # Initialize extensions
     db.init_app(app)
     ma.init_app(app)
-    cors.init_app(app, resources={r"/api/*": {"origins": "*"}})
+    cors.init_app(
+        app,
+        resources={
+            r"/api/*": {
+                "origins": [
+                    "https://aquamind-2-client.vercel.app",
+                    "https://aquamind-3.vercel.app",
+                    "http://localhost:5173",
+                ]
+            }
+        },
+        methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        allow_headers=["Content-Type", "Authorization"],
+        supports_credentials=True,
+    )
 
     # Register blueprints under the shared API prefix
     app.register_blueprint(user_bp, url_prefix="/api")
@@ -27,13 +41,6 @@ def create_app():
     app.register_blueprint(goal_bp, url_prefix="/api")
     app.register_blueprint(reminder_bp, url_prefix="/api")
     app.register_blueprint(activity_bp, url_prefix="/api")
-
-    @app.after_request
-    def add_cors_headers(response):
-        response.headers.add("Access-Control-Allow-Origin", "*")
-        response.headers.add("Access-Control-Allow-Headers", "Content-Type,Authorization")
-        response.headers.add("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS")
-        return response
 
     # Health check route
     @app.route("/")
