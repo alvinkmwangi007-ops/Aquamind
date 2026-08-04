@@ -29,6 +29,16 @@ function authHeaders() {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
+function asPaginated(items, page, perPage) {
+  return {
+    data: items,
+    total: items.length,
+    page,
+    per_page: perPage,
+    total_pages: 1,
+  };
+}
+
 // ============================================================================
 // Hydration Logs CRUD
 // ============================================================================
@@ -38,28 +48,46 @@ function authHeaders() {
  */
 export async function fetchLogs(page = 1, per_page = 20) {
   const qs = `?page=${page}&per_page=${per_page}`;
-  const response = await fetch(`${API_BASE_URL}/logs${qs}`, {
-    headers: { ...authHeaders() },
-  });
-  if (!response.ok) {
-    throw new Error(`Failed to fetch logs: ${response.statusText}`);
+  try {
+    const response = await fetch(`${API_BASE_URL}/logs${qs}`, {
+      headers: { ...authHeaders() },
+    });
+    if (!response.ok) {
+      throw new Error(`Failed to fetch logs: ${response.statusText}`);
+    }
+    return response.json();
+  } catch {
+    return asPaginated(getLogs(), page, per_page);
   }
-  return response.json();
 }
 
 /**
  * Create a new hydration log entry
  */
 export async function createLog(amount, date = new Date().toISOString()) {
-  const response = await fetch(`${API_BASE_URL}/logs`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", ...authHeaders() },
-    body: JSON.stringify({ amount_ml: amount, user_id: getStoredUserId() || 1 }),
-  });
-  if (!response.ok) {
-    throw new Error(`Failed to create log: ${response.statusText}`);
+  try {
+    const response = await fetch(`${API_BASE_URL}/logs`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...authHeaders() },
+      body: JSON.stringify({ amount_ml: amount, user_id: getStoredUserId() || 1 }),
+    });
+    if (!response.ok) {
+      throw new Error(`Failed to create log: ${response.statusText}`);
+    }
+    return response.json();
+  } catch {
+    const localLog = {
+      id: Date.now(),
+      amount,
+      amount_ml: amount,
+      date,
+      createdAt: date,
+      user_id: getStoredUserId() || 1,
+    };
+    const existing = getLogs();
+    saveLogs([localLog, ...existing]);
+    return localLog;
   }
-  return response.json();
 }
 
 /**
@@ -99,26 +127,35 @@ export async function deleteLog(id) {
  * Fetch user's hydration goal
  */
 export async function fetchGoal() {
-  const response = await fetch(`${API_BASE_URL}/goals`, { headers: { ...authHeaders() } });
-  if (!response.ok) {
-    throw new Error(`Failed to fetch goal: ${response.statusText}`);
+  try {
+    const response = await fetch(`${API_BASE_URL}/goals`, { headers: { ...authHeaders() } });
+    if (!response.ok) {
+      throw new Error(`Failed to fetch goal: ${response.statusText}`);
+    }
+    return response.json();
+  } catch {
+    return { goalAmount: getGoal(), daily_target_ml: getGoal() };
   }
-  return response.json();
 }
 
 /**
  * Create or update user's hydration goal
  */
 export async function setGoal(goalAmount) {
-  const response = await fetch(`${API_BASE_URL}/goals`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", ...authHeaders() },
-    body: JSON.stringify({ daily_target_ml: goalAmount }),
-  });
-  if (!response.ok) {
-    throw new Error(`Failed to set goal: ${response.statusText}`);
+  try {
+    const response = await fetch(`${API_BASE_URL}/goals`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...authHeaders() },
+      body: JSON.stringify({ daily_target_ml: goalAmount }),
+    });
+    if (!response.ok) {
+      throw new Error(`Failed to set goal: ${response.statusText}`);
+    }
+    return response.json();
+  } catch {
+    saveGoal(goalAmount);
+    return { goalAmount, daily_target_ml: goalAmount };
   }
-  return response.json();
 }
 
 /**
