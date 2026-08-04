@@ -5,8 +5,10 @@ import DailyLogForm from "../DailyLogForm";
 import ProgressTracker from "../ProgressTracker";
 import GoalSetting from "../GoalSetting";
 import { fetchLogs, fetchGoal, createLog, setGoal, getLogs as getLogsLocalStorage, getGoal as getGoalLocalStorage } from "../../api";
+import { useAuth } from "../../auth";
 
 export default function Home() {
+  const { user } = useAuth();
   const [current, setCurrent] = useState(0);
   const [goal, setGoalValue] = useState(2000);
   const [logs, setLogs] = useState([]);
@@ -83,11 +85,19 @@ export default function Home() {
     <div className="app-container dashboard">
       <Header />
       {error && <div className="alert error-banner">{error}</div>}
-      <section className="hero-card card">
+      <section className={`hero-card card${user?.role === "admin" ? " admin-highlight" : ""}`}>
         <div className="hero-copy">
           <p className="eyebrow">Hydration dashboard</p>
           <h2>Stay on top of your daily water intake</h2>
           <p>Monitor goals, log new drinks quickly, and review your most recent hydration moments.</p>
+          {user && (
+            <div className="role-badge-row">
+              <span className={`role-badge ${user.role === "admin" ? "admin" : "user"}`}>
+                {user.role === "admin" ? "Admin view" : "Member view"}
+              </span>
+              <span className="role-caption">Signed in as {user.name}</span>
+            </div>
+          )}
         </div>
         <div className="hero-stats">
           <div>
@@ -104,6 +114,28 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {user?.role === "admin" && (
+        <section className="admin-panel card">
+          <div className="summary-head">
+            <div>
+              <h3>Admin controls</h3>
+              <p className="summary-copy">Only visible to administrators</p>
+            </div>
+            <span>Protected</span>
+          </div>
+          <div className="admin-panel-grid">
+            <div>
+              <h4>System overview</h4>
+              <p>Monitor total hydration activity and manage higher-level goals for the app.</p>
+            </div>
+            <div>
+              <h4>Access level</h4>
+              <p>Admin users can review protected actions and manage the dashboard experience.</p>
+            </div>
+          </div>
+        </section>
+      )}
 
       <section className="dashboard-grid">
         <div className="summary-card card">

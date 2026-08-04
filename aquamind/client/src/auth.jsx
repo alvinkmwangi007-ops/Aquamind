@@ -5,44 +5,84 @@ const mockUsers = {
   "admin@example.com": {
     id: 1,
     email: "admin@example.com",
-    name: "Admin User",
+    name: "AquaMind Admin",
     role: "admin",
     password: "admin123",
+    theme: "dark",
+    plan: "pro",
+  },
+  "manager@example.com": {
+    id: 2,
+    email: "manager@example.com",
+    name: "Mina Manager",
+    role: "manager",
+    password: "manager123",
+    theme: "light",
+    plan: "team",
+  },
+  "coach@example.com": {
+    id: 3,
+    email: "coach@example.com",
+    name: "Leo Coach",
+    role: "coach",
+    password: "coach123",
+    theme: "blue",
+    plan: "plus",
   },
   "user@example.com": {
-    id: 2,
+    id: 4,
     email: "user@example.com",
     name: "Regular User",
     role: "user",
     password: "user123",
+    theme: "default",
+    plan: "free",
   },
 };
+
+const STORAGE_KEY = "aquamind_user";
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const stored = localStorage.getItem("aquamind_user");
+    const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
       setUser(JSON.parse(stored));
     }
     setLoading(false);
   }, []);
 
-  const login = async (email, password) => {
-    const user = mockUsers[email.toLowerCase()];
-    if (!user || user.password !== password) {
-      throw new Error("Invalid email or password. Use admin@example.com/admin123 or user@example.com/user123.");
+  const login = async (email, password, rememberMe = false) => {
+    const normalizedEmail = email.toLowerCase();
+    const account = mockUsers[normalizedEmail];
+    if (!account || account.password !== password) {
+      throw new Error("Invalid email or password. Try admin@example.com/admin123, manager@example.com/manager123, coach@example.com/coach123, or user@example.com/user123.");
     }
-    const authUser = { email: user.email, name: user.name, role: user.role };
-    localStorage.setItem("aquamind_user", JSON.stringify(authUser));
+
+    const authUser = {
+      email: account.email,
+      name: account.name,
+      role: account.role,
+      plan: account.plan,
+      theme: account.theme,
+    };
+
+    if (rememberMe) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(authUser));
+    } else {
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(authUser));
+      localStorage.removeItem(STORAGE_KEY);
+    }
+
     setUser(authUser);
     return { user: authUser };
   };
 
   const logout = () => {
-    localStorage.removeItem("aquamind_user");
+    localStorage.removeItem(STORAGE_KEY);
+    sessionStorage.removeItem(STORAGE_KEY);
     setUser(null);
   };
 
