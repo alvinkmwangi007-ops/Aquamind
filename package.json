@@ -10,7 +10,7 @@
   ],
   "scripts": {
     "dev": "npm --workspace aquamind/client run dev",
-    "build": "npm --workspace aquamind/client run build",
+    "build": "npm --workspace aquamind/client run build && node scripts/sync-dist.mjs",
     "preview": "npm --workspace aquamind/client run preview",
     "lint": "npm --workspace aquamind/client run lint"
   }

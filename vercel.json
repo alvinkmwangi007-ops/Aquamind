@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "buildCommand": "npm --workspace aquamind/client run build",
+  "buildCommand": "npm run build",
   "installCommand": "npm install",
-  "outputDirectory": "aquamind/client/dist",
+  "outputDirectory": "dist",
   "rewrites": [
     {
       "source": "/(.*)",
