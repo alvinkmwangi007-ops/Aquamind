@@ -21,12 +21,12 @@ def create_app():
     ma.init_app(app)
     cors.init_app(app, resources={r"/api/*": {"origins": "*"}})
 
-    # Register blueprints with route prefixes
-    app.register_blueprint(user_bp, url_prefix="/api/users")
-    app.register_blueprint(water_log_bp, url_prefix="/api/logs")
-    app.register_blueprint(goal_bp, url_prefix="/api/goals")
-    app.register_blueprint(reminder_bp, url_prefix="/api/reminders")
-    app.register_blueprint(activity_bp, url_prefix="/api/activities")
+    # Register blueprints under the shared API prefix
+    app.register_blueprint(user_bp, url_prefix="/api")
+    app.register_blueprint(water_log_bp, url_prefix="/api")
+    app.register_blueprint(goal_bp, url_prefix="/api")
+    app.register_blueprint(reminder_bp, url_prefix="/api")
+    app.register_blueprint(activity_bp, url_prefix="/api")
 
     # Health check route
     @app.route("/")

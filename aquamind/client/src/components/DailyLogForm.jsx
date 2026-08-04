@@ -17,6 +17,7 @@ export default function DailyLogForm({ onAdd }) {
     <form onSubmit={handleSubmit} className="daily-form card">
       <input
         type="number"
+        name="amount"
         value={amount}
         onChange={(e) => setAmount(e.target.value)}
         placeholder="Enter water (ml)"

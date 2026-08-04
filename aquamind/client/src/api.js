@@ -1,5 +1,15 @@
 // API Service with CRUD operations using fetch + error handling
-const API_BASE_URL = import.meta.env.VITE_API_URL || "/api";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "https://aquamind-2.onrender.com/api";
+
+function getStoredUserId() {
+  const stored = localStorage.getItem("aquamind_user");
+  if (!stored) return null;
+  try {
+    return JSON.parse(stored)?.id || null;
+  } catch {
+    return null;
+  }
+}
 
 // Auth helpers (store token in localStorage)
 export function setToken(token) {
@@ -44,7 +54,7 @@ export async function createLog(amount, date = new Date().toISOString()) {
   const response = await fetch(`${API_BASE_URL}/logs`, {
     method: "POST",
     headers: { "Content-Type": "application/json", ...authHeaders() },
-    body: JSON.stringify({ amount_ml: amount, user_id: 1 }),
+    body: JSON.stringify({ amount_ml: amount, user_id: getStoredUserId() || 1 }),
   });
   if (!response.ok) {
     throw new Error(`Failed to create log: ${response.statusText}`);
