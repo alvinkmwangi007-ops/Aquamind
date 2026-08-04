@@ -10,7 +10,7 @@ goals_schema = GoalSchema(many=True)
 @goal_bp.route("/goals", methods=["GET"])
 def get_goals():
     goals = Goal.query.all()
-    return jsonify(goals_schema.dump(goals))
+    return jsonify(goals_schema.dump(goals)), 200
 
 @goal_bp.route("/goals", methods=["POST"])
 def create_goal():
@@ -18,4 +18,4 @@ def create_goal():
     new_goal = goal_schema.load(data, session=db.session)
     db.session.add(new_goal)
     db.session.commit()
-    return goal_schema.jsonify(new_goal), 201
+    return jsonify(goal_schema.dump(new_goal)), 201

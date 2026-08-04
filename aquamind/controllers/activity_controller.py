@@ -10,7 +10,7 @@ activities_schema = ActivitySchema(many=True)
 @activity_bp.route("/activities", methods=["GET"])
 def get_activities():
     activities = Activity.query.all()
-    return jsonify(activities_schema.dump(activities))
+    return jsonify(activities_schema.dump(activities)), 200
 
 @activity_bp.route("/activities", methods=["POST"])
 def create_activity():
@@ -18,4 +18,7 @@ def create_activity():
     new_activity = activity_schema.load(data, session=db.session)
     db.session.add(new_activity)
     db.session.commit()
-    return activity_schema.jsonify(new_activity), 201
+
+    return jsonify(activity_schema.dump(new_activity)), 201
+
+
