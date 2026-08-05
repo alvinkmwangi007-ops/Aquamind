@@ -965,6 +965,32 @@ nav a:hover {
   flex: 1;
 }
 
+/* Final nav icon overrides */
+nav .nav-link.nav-icon-only {
+  width: 40px;
+  height: 40px;
+  border: 1px solid #cfe0ff;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  color: #1d4ed8;
+  background: #f6f9ff;
+}
+
+nav .nav-link.nav-icon-only:hover {
+  color: #173f97;
+  background: #eaf1ff;
+  text-decoration: none;
+}
+
+nav .nav-link.nav-icon-only .nav-icon {
+  width: 1.2rem;
+  height: 1.2rem;
+  color: inherit;
+}
+
 .goal-form input {
   width: 100%;
   box-sizing: border-box;
