@@ -4,8 +4,8 @@ services:
     env: python
     plan: free
     region: oregon
-    buildCommand: python -m pip install --upgrade pip && python -m pip install -r server/requirements.txt
-    startCommand: python -m gunicorn server.app:app --bind 0.0.0.0:$PORT
+    buildCommand: python -m pip install --upgrade pip setuptools wheel && python -m pip install -r server/requirements.txt
+    startCommand: python -m gunicorn "server.app:app" --bind 0.0.0.0:$PORT --workers 1 --timeout 120
     envVars:
       - key: FLASK_ENV
         value: production
