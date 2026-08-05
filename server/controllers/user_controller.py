@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity, get_jwt
+from sqlalchemy.exc import OperationalError
 from server.extensions import db
 from server.models.user import User
 from server.schemas.user_schema import UserSchema
@@ -32,7 +33,11 @@ def login_user():
     if not data.get("username") or not data.get("password"):
         return jsonify({"message": "username and password required"}), 400
 
-    user = User.query.filter_by(username=data.get("username")).first()
+    try:
+        user = User.query.filter_by(username=data.get("username")).first()
+    except OperationalError:
+        return jsonify({"message": "Database not initialized yet. Please run migrations/seed."}), 503
+
     if not user or not user.check_password(data.get("password")):
         return jsonify({"message": "Invalid credentials"}), 401
 
