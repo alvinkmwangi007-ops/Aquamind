@@ -90,7 +90,22 @@ function asPaginated(items, page, perPage) {
 
 function normalizeTimestamp(value) {
   if (!value) return new Date().toISOString();
-  const parsed = new Date(value);
+
+  let candidate = value;
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+
+    // Backend may return naive datetimes (no timezone); treat those as UTC.
+    if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}(\.\d+)?$/.test(trimmed)) {
+      candidate = `${trimmed.replace(" ", "T")}Z`;
+    } else if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?$/.test(trimmed)) {
+      candidate = `${trimmed}Z`;
+    } else {
+      candidate = trimmed;
+    }
+  }
+
+  const parsed = new Date(candidate);
   if (Number.isNaN(parsed.getTime())) return new Date().toISOString();
   return parsed.toISOString();
 }
