@@ -1,7 +1,7 @@
 // src/components/pages/History.jsx
 import { useState, useEffect } from "react";
 import Header from "../Header";
-import { fetchLogs, getLogs as getLogsLocalStorage } from "../../api";
+import { deleteLog, fetchLogs, getLogs as getLogsLocalStorage, updateLog } from "../../api";
 import { useAuth } from "../../auth";
 
 function buildLastSevenDaySeries(logs, userId) {
@@ -70,6 +70,10 @@ function LineGraph({ points, title }) {
 export default function History() {
   const { user, users = [] } = useAuth();
   const [historyData, setHistoryData] = useState([]);
+  const [editingId, setEditingId] = useState(null);
+  const [editAmount, setEditAmount] = useState("");
+  const [savingId, setSavingId] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -90,6 +94,50 @@ export default function History() {
     };
     loadHistory();
   }, []);
+
+  const beginEdit = (entry) => {
+    setEditingId(entry.id);
+    setEditAmount(String(entry.amount_ml || entry.amount || ""));
+    setError(null);
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditAmount("");
+  };
+
+  const saveEdit = async (entryId) => {
+    const parsed = Number(editAmount);
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+      setError("Amount must be a positive number.");
+      return;
+    }
+
+    setSavingId(entryId);
+    setError(null);
+    try {
+      const updated = await updateLog(entryId, parsed);
+      setHistoryData((prev) => prev.map((entry) => (entry.id === entryId ? updated : entry)));
+      cancelEdit();
+    } catch (err) {
+      setError(err.message || "Failed to update log entry.");
+    } finally {
+      setSavingId(null);
+    }
+  };
+
+  const removeEntry = async (entryId) => {
+    setDeletingId(entryId);
+    setError(null);
+    try {
+      await deleteLog(entryId);
+      setHistoryData((prev) => prev.filter((entry) => entry.id !== entryId));
+    } catch (err) {
+      setError(err.message || "Failed to delete log entry.");
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   const normalizedHistory = historyData.map((item) => ({
     ...item,
@@ -126,11 +174,55 @@ export default function History() {
         {loading ? (
           <p className="loading-msg">Loading history...</p>
         ) : (
-          <div className="line-chart-grid">
+          <div className="line-chart-grid" style={{ gap: 16 }}>
+            <div className="card">
+              <h3 style={{ marginTop: 0 }}>Log Entries</h3>
+              {normalizedHistory.length === 0 ? (
+                <p className="info-msg">No hydration entries yet.</p>
+              ) : (
+                normalizedHistory.map((entry) => {
+                  const isEditing = editingId === entry.id;
+                  return (
+                    <div key={entry.id} className="log-item" style={{ alignItems: "center" }}>
+                      <div>
+                        <strong>{entry.amount_ml || entry.amount} ml</strong>
+                        <p>{new Date(entry.logged_at || entry.date || entry.createdAt).toLocaleString()}</p>
+                      </div>
+                      {isEditing ? (
+                        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                          <input
+                            type="number"
+                            min="1"
+                            value={editAmount}
+                            onChange={(e) => setEditAmount(e.target.value)}
+                            style={{ width: 100 }}
+                          />
+                          <button type="button" className="ghost" onClick={() => saveEdit(entry.id)} disabled={savingId === entry.id}>
+                            {savingId === entry.id ? "Saving..." : "Save"}
+                          </button>
+                          <button type="button" className="ghost" onClick={cancelEdit}>
+                            Cancel
+                          </button>
+                        </div>
+                      ) : (
+                        <div style={{ display: "flex", gap: 8 }}>
+                          <button type="button" className="ghost" onClick={() => beginEdit(entry)}>
+                            Edit
+                          </button>
+                          <button type="button" className="ghost" onClick={() => removeEntry(entry.id)} disabled={deletingId === entry.id}>
+                            {deletingId === entry.id ? "Deleting..." : "Delete"}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
+              )}
+            </div>
             {activeUsers.map((entry) => (
               <div className="card" key={entry.id}>
                 <LineGraph
-                  title={`${entry.name} (${entry.role})`}
+                  title={`${entry.name || entry.username} (${entry.role})`}
                   points={buildLastSevenDaySeries(graphSource, entry.id)}
                 />
               </div>

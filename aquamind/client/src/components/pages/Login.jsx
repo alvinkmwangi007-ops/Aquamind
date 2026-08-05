@@ -4,24 +4,52 @@ import Header from "../Header";
 import { useAuth } from "../../auth";
 
 export default function Login() {
-  const { user, login } = useAuth();
+  const { user, login, register } = useAuth();
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
+  const [registering, setRegistering] = useState(false);
+  const [regUsername, setRegUsername] = useState("");
+  const [regEmail, setRegEmail] = useState("");
+  const [regPassword, setRegPassword] = useState("");
   const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
+    setSuccess(null);
     setLoading(true);
 
     try {
-      await login(email, password, rememberMe);
+      await login(identifier, password, rememberMe);
       navigate("/");
-    } catch (err) {
-      setError(err.message || "Login failed.");
+    } catch {
+      setError("Login failed. Check your credentials and try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    setError(null);
+    setSuccess(null);
+    setLoading(true);
+
+    try {
+      await register(regUsername.trim(), regEmail.trim(), regPassword);
+      setSuccess("Account created. You can sign in now.");
+      setRegistering(false);
+      setIdentifier(regUsername.trim());
+      setPassword("");
+      setRegUsername("");
+      setRegEmail("");
+      setRegPassword("");
+    } catch {
+      setError("Registration failed. Please verify your details and try again.");
     } finally {
       setLoading(false);
     }
@@ -43,16 +71,27 @@ export default function Login() {
       </div>
       <div className="login-card card">
         {error && <div className="alert error-banner">{error}</div>}
+        {success && <div className="alert">{success}</div>}
+        <div className="role-badge-row" style={{ marginBottom: 12 }}>
+          <button type="button" className={!registering ? "ghost" : ""} onClick={() => setRegistering(false)}>
+            Sign In
+          </button>
+          <button type="button" className={registering ? "ghost" : ""} onClick={() => setRegistering(true)}>
+            Register
+          </button>
+        </div>
+
+        {!registering ? (
         <form onSubmit={handleSubmit} className="login-form">
           <label>
-            Email
+            Username or Email
             <input
-              id="login-email"
-              name="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
+              id="login-identifier"
+              name="identifier"
+              type="text"
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
+              placeholder="username or email"
               required
             />
           </label>
@@ -80,6 +119,50 @@ export default function Login() {
             {loading ? "Signing in..." : "Sign In"}
           </button>
         </form>
+        ) : (
+          <form onSubmit={handleRegister} className="login-form">
+            <label>
+              Username
+              <input
+                id="register-username"
+                name="username"
+                type="text"
+                value={regUsername}
+                onChange={(e) => setRegUsername(e.target.value)}
+                placeholder="your_username"
+                required
+              />
+            </label>
+            <label>
+              Email
+              <input
+                id="register-email"
+                name="email"
+                type="email"
+                value={regEmail}
+                onChange={(e) => setRegEmail(e.target.value)}
+                placeholder="you@example.com"
+                required
+              />
+            </label>
+            <label>
+              Password
+              <input
+                id="register-password"
+                name="password"
+                type="password"
+                value={regPassword}
+                onChange={(e) => setRegPassword(e.target.value)}
+                placeholder="Create a password"
+                minLength={6}
+                required
+              />
+            </label>
+            <button type="submit" disabled={loading}>
+              {loading ? "Creating account..." : "Create Account"}
+            </button>
+          </form>
+        )}
         <p className="copyright">© 2026 AquaMind</p>
       </div>
     </div>

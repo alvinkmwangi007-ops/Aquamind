@@ -1,44 +1,7 @@
 import { createContext, useContext, useState, useEffect } from "react";
+import { clearToken, currentUser, fetchUsers, login as loginRequest, register as registerRequest } from "./api";
 
 const AuthContext = createContext(null);
-const mockUsers = {
-  "admin@example.com": {
-    id: 1,
-    email: "admin@example.com",
-    name: "AquaMind Admin",
-    role: "admin",
-    password: "admin123",
-    theme: "dark",
-    plan: "pro",
-  },
-  "manager@example.com": {
-    id: 2,
-    email: "manager@example.com",
-    name: "Mina Manager",
-    role: "manager",
-    password: "manager123",
-    theme: "light",
-    plan: "team",
-  },
-  "coach@example.com": {
-    id: 3,
-    email: "coach@example.com",
-    name: "Leo Coach",
-    role: "coach",
-    password: "coach123",
-    theme: "blue",
-    plan: "plus",
-  },
-  "user@example.com": {
-    id: 4,
-    email: "user@example.com",
-    name: "Regular User",
-    role: "user",
-    password: "user123",
-    theme: "default",
-    plan: "free",
-  },
-};
 
 const STORAGE_KEY = "aquamind_user";
 
@@ -55,55 +18,102 @@ function getStoredAuthUser() {
   }
 }
 
-function getPublicUsers() {
-  return Object.values(mockUsers).map(({ password, ...user }) => user);
+function toClientUser(raw) {
+  if (!raw) return null;
+  return {
+    id: raw.id,
+    email: raw.email,
+    username: raw.username,
+    name: raw.username,
+    role: raw.role,
+  };
 }
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
+  const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const storedUser = getStoredAuthUser();
-    if (storedUser) setUser(storedUser);
-    setLoading(false);
+    const bootstrapAuth = async () => {
+      const storedUser = getStoredAuthUser();
+      if (storedUser) {
+        setUser(storedUser);
+      }
+
+      try {
+        const me = await currentUser();
+        const normalized = toClientUser(me);
+        setUser(normalized);
+
+        const persisted = localStorage.getItem(STORAGE_KEY);
+        if (persisted) {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
+        } else {
+          sessionStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
+        }
+
+        if (normalized?.role === "admin") {
+          const response = await fetchUsers();
+          setUsers((response.data || []).map(toClientUser));
+        }
+      } catch {
+        clearToken();
+        localStorage.removeItem(STORAGE_KEY);
+        sessionStorage.removeItem(STORAGE_KEY);
+        setUser(null);
+        setUsers([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    bootstrapAuth();
   }, []);
 
-  const login = async (email, password, rememberMe = false) => {
-    const normalizedEmail = email.toLowerCase();
-    const account = mockUsers[normalizedEmail];
-    if (!account || account.password !== password) {
-      throw new Error("Invalid email or password. Try admin@example.com/admin123, manager@example.com/manager123, coach@example.com/coach123, or user@example.com/user123.");
-    }
-
-    const authUser = {
-      id: account.id,
-      email: account.email,
-      name: account.name,
-      role: account.role,
-      plan: account.plan,
-      theme: account.theme,
-    };
+  const login = async (identifier, password, rememberMe = false) => {
+    const result = await loginRequest(identifier, password, rememberMe);
+    const authUser = toClientUser(result.user);
 
     if (rememberMe) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(authUser));
+      sessionStorage.removeItem(STORAGE_KEY);
     } else {
       sessionStorage.setItem(STORAGE_KEY, JSON.stringify(authUser));
       localStorage.removeItem(STORAGE_KEY);
     }
 
     setUser(authUser);
+
+    if (authUser?.role === "admin") {
+      try {
+        const response = await fetchUsers();
+        setUsers((response.data || []).map(toClientUser));
+      } catch {
+        setUsers([]);
+      }
+    } else {
+      setUsers([]);
+    }
+
     return { user: authUser };
   };
 
+  const register = async (username, email, password) => {
+    const created = await registerRequest(username, email, password);
+    return toClientUser(created);
+  };
+
   const logout = () => {
+    clearToken();
     localStorage.removeItem(STORAGE_KEY);
     sessionStorage.removeItem(STORAGE_KEY);
     setUser(null);
+    setUsers([]);
   };
 
   return (
-    <AuthContext.Provider value={{ user, users: getPublicUsers(), loading, login, logout }}>
+    <AuthContext.Provider value={{ user, users, loading, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );

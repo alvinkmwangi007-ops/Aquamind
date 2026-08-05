@@ -17,21 +17,30 @@ enrollments_schema = EnrollmentSchema(many=True)
 @course_bp.route("/", methods=["GET"])
 @jwt_required()
 def get_courses():
-    # Return courses with enrollment counts (aggregation)
-    results = (
+    page = int(request.args.get("page", 1))
+    per_page = int(request.args.get("per_page", 10))
+
+    # Return courses with enrollment counts (join + aggregation)
+    query = (
         db.session.query(Course, func.count(Enrollment.id).label("enrolled_count"))
         .outerjoin(Enrollment, Enrollment.course_id == Course.id)
         .group_by(Course.id)
         .order_by(Course.created_at.desc())
-        .all()
     )
+    results = query.paginate(page=page, per_page=per_page, error_out=False)
 
     payload = []
-    for course, count in results:
+    for course, count in results.items:
         c = course_schema.dump(course)
         c["enrolled_count"] = count
         payload.append(c)
-    return jsonify(payload)
+    return jsonify({
+        "data": payload,
+        "total": results.total,
+        "page": results.page,
+        "per_page": results.per_page,
+        "total_pages": results.pages,
+    })
 
 
 @course_bp.route("/", methods=["POST"])
@@ -66,5 +75,35 @@ def enroll_course():
 @jwt_required()
 def get_enrollments():
     user_id = int(get_jwt_identity())
-    enrollments = Enrollment.query.filter_by(user_id=user_id).all()
-    return jsonify(enrollments_schema.dump(enrollments))
+    page = int(request.args.get("page", 1))
+    per_page = int(request.args.get("per_page", 10))
+    enrollments = Enrollment.query.filter_by(user_id=user_id).order_by(Enrollment.enrolled_at.desc()).paginate(
+        page=page,
+        per_page=per_page,
+        error_out=False,
+    )
+    return jsonify({
+        "data": enrollments_schema.dump(enrollments.items),
+        "total": enrollments.total,
+        "page": enrollments.page,
+        "per_page": enrollments.per_page,
+        "total_pages": enrollments.pages,
+    })
+
+
+@course_bp.route("/enrollment-stats", methods=["GET"])
+@jwt_required()
+def enrollment_stats():
+    user_id = int(get_jwt_identity())
+    stats = (
+        db.session.query(Enrollment.grade, func.count(Enrollment.id).label("count"))
+        .join(Course, Course.id == Enrollment.course_id)
+        .filter(Enrollment.user_id == user_id)
+        .group_by(Enrollment.grade)
+        .order_by(func.count(Enrollment.id).desc())
+        .all()
+    )
+    return jsonify([
+        {"grade": grade if grade else "ungraded", "count": count}
+        for grade, count in stats
+    ])

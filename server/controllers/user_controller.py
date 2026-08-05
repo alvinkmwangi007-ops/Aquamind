@@ -17,7 +17,7 @@ def register_user():
         return jsonify({"message": "username, email, and password required"}), 400
 
     if User.query.filter((User.username == data["username"]) | (User.email == data["email"]) ).first():
-        return jsonify({"message": "User with that username or email already exists"}), 409
+        return jsonify({"message": "Account already exists"}), 409
 
     user = User(username=data["username"], email=data["email"], role=data.get("role", "user"))
     user.set_password(data["password"])
@@ -30,15 +30,17 @@ def register_user():
 @user_bp.route("/login", methods=["POST"])
 def login_user():
     data = request.get_json() or {}
-    if not data.get("username") or not data.get("password"):
-        return jsonify({"message": "username and password required"}), 400
+    identifier = (data.get("username") or data.get("email") or "").strip()
+    password = data.get("password")
+    if not identifier or not password:
+        return jsonify({"message": "username/email and password required"}), 400
 
     try:
-        user = User.query.filter_by(username=data.get("username")).first()
+        user = User.query.filter((User.username == identifier) | (User.email == identifier)).first()
     except OperationalError:
         return jsonify({"message": "Database not initialized yet. Please run migrations/seed."}), 503
 
-    if not user or not user.check_password(data.get("password")):
+    if not user or not user.check_password(password):
         return jsonify({"message": "Invalid credentials"}), 401
 
     token = create_access_token(identity=str(user.id), additional_claims={"role": user.role})
@@ -56,11 +58,15 @@ def current_user():
 @user_bp.route("/", methods=["GET"])
 @jwt_required()
 def get_users():
+    claims = get_jwt()
+    if claims.get("role") != "admin":
+        return jsonify({"message": "Admin access required"}), 403
+
     page = int(request.args.get("page", 1))
     per_page = int(request.args.get("per_page", 10))
     users = User.query.order_by(User.created_at.desc()).paginate(page=page, per_page=per_page, error_out=False)
     return jsonify({
-        "data": users.items,
+        "data": users_schema.dump(users.items),
         "total": users.total,
         "page": users.page,
         "per_page": users.per_page,
@@ -75,7 +81,9 @@ def delete_user(user_id):
     if claims.get("role") != "admin":
         return jsonify({"message": "Admin access required"}), 403
 
-    user = User.query.get_or_404(user_id)
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({"message": "User not found"}), 404
     db.session.delete(user)
     db.session.commit()
     return jsonify({"message": "User deleted"})

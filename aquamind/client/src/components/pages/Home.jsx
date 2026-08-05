@@ -116,7 +116,7 @@ export default function Home() {
               <span className={`role-badge ${user.role === "admin" ? "admin" : "user"}`}>
                 {user.role === "admin" ? "Admin view" : "Member view"}
               </span>
-              <span className="role-caption">Signed in as {user.name}</span>
+              <span className="role-caption">Signed in as {user.name || user.username}</span>
             </div>
           )}
         </div>
@@ -138,7 +138,7 @@ export default function Home() {
 
       {completedGoal && (
         <section className="card congrats-card" role="status" aria-live="polite">
-          <h3>Congratulations, {user?.name || "Hydration Hero"}!</h3>
+          <h3>Congratulations, {user?.name || user?.username || "Hydration Hero"}!</h3>
           <p>You reached your daily hydration target of {goal} ml.</p>
         </section>
       )}
@@ -168,7 +168,7 @@ export default function Home() {
               {userBarData.map((entry) => (
                 <div className="user-bar-row" key={entry.id}>
                   <div className="user-meta">
-                    <strong>{entry.name}</strong>
+                    <strong>{entry.name || entry.username}</strong>
                     <span>{entry.role} · goal {entry.goalAmount} ml</span>
                     <span>
                       Set at: {entry.goalSetAt ? new Date(entry.goalSetAt).toLocaleString() : "Not set"}

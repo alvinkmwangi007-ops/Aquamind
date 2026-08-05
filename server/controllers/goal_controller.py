@@ -38,6 +38,35 @@ def create_goal():
     return jsonify(goal_schema.dump(goal)), 201
 
 
+@goal_bp.route("/<int:goal_id>", methods=["PUT"])
+@jwt_required()
+def update_goal(goal_id):
+    data = request.get_json() or {}
+    user_id = int(get_jwt_identity())
+    goal = Goal.query.filter_by(id=goal_id, user_id=user_id).first()
+    if not goal:
+        return jsonify({"message": "Goal not found"}), 404
+
+    if data.get("daily_target_ml") is not None:
+        goal.daily_target_ml = data["daily_target_ml"]
+
+    db.session.commit()
+    return jsonify(goal_schema.dump(goal))
+
+
+@goal_bp.route("/", methods=["DELETE"])
+@jwt_required()
+def delete_latest_goal():
+    user_id = int(get_jwt_identity())
+    goal = Goal.query.filter_by(user_id=user_id).order_by(Goal.set_at.desc()).first()
+    if not goal:
+        return jsonify({"message": "Goal not found"}), 404
+
+    db.session.delete(goal)
+    db.session.commit()
+    return jsonify({"message": "Deleted"})
+
+
 @goal_bp.route("/stats", methods=["GET"])
 @jwt_required()
 def goal_stats():

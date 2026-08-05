@@ -1,7 +1,8 @@
 import os
 
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from flask_migrate import Migrate
+from flask_jwt_extended.exceptions import JWTExtendedException
 from server.controllers.activity_controller import activity_bp
 from server.controllers.course_controller import course_bp
 from server.controllers.goal_controller import goal_bp
@@ -14,13 +15,14 @@ migrate = Migrate()
 
 def create_app():
     app = Flask(__name__)
+    app.url_map.strict_slashes = False
 
     database_url = os.getenv("DATABASE_URL", "sqlite:///aquamind.db")
     if database_url.startswith("postgres://"):
         database_url = database_url.replace("postgres://", "postgresql://", 1)
 
     app.config["SQLALCHEMY_DATABASE_URI"] = database_url
-    app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY", "super-secret-key")
+    app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY", "dev-only-change-me-to-a-32-char-secret")
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
     db.init_app(app)
@@ -56,6 +58,32 @@ def create_app():
     app.register_blueprint(reminder_bp, url_prefix="/api/reminders")
     app.register_blueprint(activity_bp, url_prefix="/api/activities")
     app.register_blueprint(course_bp, url_prefix="/api/courses")
+
+    @jwt.unauthorized_loader
+    def unauthorized_callback(_reason):
+        return jsonify({"message": "Authentication required"}), 401
+
+    @jwt.invalid_token_loader
+    def invalid_token_callback(_reason):
+        return jsonify({"message": "Invalid token"}), 401
+
+    @jwt.expired_token_loader
+    def expired_token_callback(_jwt_header, _jwt_payload):
+        return jsonify({"message": "Token has expired"}), 401
+
+    @jwt.revoked_token_loader
+    def revoked_token_callback(_jwt_header, _jwt_payload):
+        return jsonify({"message": "Token has been revoked"}), 401
+
+    @app.errorhandler(404)
+    def handle_not_found(_error):
+        if request.path.startswith("/api/"):
+            return jsonify({"message": "Resource not found"}), 404
+        return jsonify({"message": "Not found"}), 404
+
+    @app.errorhandler(JWTExtendedException)
+    def handle_jwt_errors(_error):
+        return jsonify({"message": "Authentication error"}), 401
 
     @app.route("/")
     def healthcheck():

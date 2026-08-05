@@ -1,6 +1,7 @@
 // API Service with CRUD operations using fetch + error handling
-const API_BASE_URL = import.meta.env.VITE_API_URL || "https://aquamind-2.onrender.com/api";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "https://aquamind-backend-uzsl.onrender.com/api";
 const GOAL_RECORDS_KEY = "aquamind_goal_records";
+const TOKEN_KEY = "aquamind_token";
 
 function getStoredUserId() {
   const stored = sessionStorage.getItem("aquamind_user") || localStorage.getItem("aquamind_user");
@@ -12,22 +13,45 @@ function getStoredUserId() {
   }
 }
 
-// Auth helpers (store token in localStorage)
-export function setToken(token) {
-  localStorage.setItem("aquamind_token", token);
+// Auth helpers (store token in session or local storage)
+export function setToken(token, rememberMe = false) {
+  if (rememberMe) {
+    localStorage.setItem(TOKEN_KEY, token);
+    sessionStorage.removeItem(TOKEN_KEY);
+    return;
+  }
+
+  sessionStorage.setItem(TOKEN_KEY, token);
+  localStorage.removeItem(TOKEN_KEY);
 }
 
 export function getToken() {
-  return localStorage.getItem("aquamind_token");
+  return sessionStorage.getItem(TOKEN_KEY) || localStorage.getItem(TOKEN_KEY);
 }
 
 export function clearToken() {
-  localStorage.removeItem("aquamind_token");
+  localStorage.removeItem(TOKEN_KEY);
+  sessionStorage.removeItem(TOKEN_KEY);
 }
 
 function authHeaders() {
   const token = getToken();
   return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+function sanitizeMessage(message, fallback) {
+  if (!message || typeof message !== "string") return fallback;
+  const scrubbed = message.replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, "that account");
+  return scrubbed;
+}
+
+async function parseApiError(response, fallback) {
+  try {
+    const body = await response.json();
+    return sanitizeMessage(body?.message, fallback);
+  } catch {
+    return fallback;
+  }
 }
 
 function getGoalRecordsMap() {
@@ -78,10 +102,13 @@ export async function fetchLogs(page = 1, per_page = 20) {
       headers: { ...authHeaders() },
     });
     if (!response.ok) {
-      throw new Error(`Failed to fetch logs: ${response.statusText}`);
+      throw new Error(await parseApiError(response, "Failed to fetch logs"));
     }
     return response.json();
-  } catch {
+  } catch (error) {
+    if (error.message === "Authentication required" || error.message === "Invalid token") {
+      throw error;
+    }
     return asPaginated(getLogs(), page, per_page);
   }
 }
@@ -97,7 +124,7 @@ export async function createLog(amount, date = new Date().toISOString()) {
       body: JSON.stringify({ amount_ml: amount, user_id: getStoredUserId() || 1 }),
     });
     if (!response.ok) {
-      throw new Error(`Failed to create log: ${response.statusText}`);
+      throw new Error(await parseApiError(response, "Failed to create log"));
     }
     return response.json();
   } catch {
@@ -125,7 +152,7 @@ export async function updateLog(id, amount) {
     body: JSON.stringify({ amount_ml: amount }),
   });
   if (!response.ok) {
-    throw new Error(`Failed to update log: ${response.statusText}`);
+    throw new Error(await parseApiError(response, "Failed to update log"));
   }
   return response.json();
 }
@@ -139,7 +166,7 @@ export async function deleteLog(id) {
     headers: { ...authHeaders() },
   });
   if (!response.ok) {
-    throw new Error(`Failed to delete log: ${response.statusText}`);
+    throw new Error(await parseApiError(response, "Failed to delete log"));
   }
   return response.json();
 }
@@ -156,7 +183,7 @@ export async function fetchGoal() {
   try {
     const response = await fetch(`${API_BASE_URL}/goals`, { headers: { ...authHeaders() } });
     if (!response.ok) {
-      throw new Error(`Failed to fetch goal: ${response.statusText}`);
+      throw new Error(await parseApiError(response, "Failed to fetch goal"));
     }
     const data = normalizeGoalData(await response.json(), getGoal());
     if (data.goalAmount) {
@@ -185,7 +212,7 @@ export async function setGoal(goalAmount, setAt = new Date().toISOString()) {
       body: JSON.stringify({ daily_target_ml: goalAmount, set_at: setAt }),
     });
     if (!response.ok) {
-      throw new Error(`Failed to set goal: ${response.statusText}`);
+      throw new Error(await parseApiError(response, "Failed to set goal"));
     }
     const data = normalizeGoalData(await response.json(), goalAmount);
     const finalizedSetAt = data.set_at || setAt;
@@ -206,7 +233,7 @@ export async function deleteGoal() {
     headers: { ...authHeaders() },
   });
   if (!response.ok) {
-    throw new Error(`Failed to delete goal: ${response.statusText}`);
+    throw new Error(await parseApiError(response, "Failed to delete goal"));
   }
   return response.json();
 }
@@ -221,25 +248,33 @@ export async function register(username, email, password) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ username, email, password }),
   });
-  if (!res.ok) throw new Error(`Register failed: ${res.statusText}`);
+  if (!res.ok) throw new Error(await parseApiError(res, "Registration failed"));
   return res.json();
 }
 
-export async function login(username, password) {
+export async function login(identifier, password, rememberMe = false) {
   const res = await fetch(`${API_BASE_URL}/users/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ username, password }),
+    body: JSON.stringify({ username: identifier, password }),
   });
-  if (!res.ok) throw new Error(`Login failed: ${res.statusText}`);
+  if (!res.ok) throw new Error(await parseApiError(res, "Login failed"));
   const data = await res.json();
-  if (data.access_token) setToken(data.access_token);
+  if (data.access_token) setToken(data.access_token, rememberMe);
   return data;
 }
 
 export async function currentUser() {
   const res = await fetch(`${API_BASE_URL}/users/me`, { headers: { ...authHeaders() } });
-  if (!res.ok) throw new Error(`Fetch current user failed: ${res.statusText}`);
+  if (!res.ok) throw new Error(await parseApiError(res, "Fetch current user failed"));
+  return res.json();
+}
+
+export async function fetchUsers(page = 1, per_page = 50) {
+  const res = await fetch(`${API_BASE_URL}/users?page=${page}&per_page=${per_page}`, {
+    headers: { ...authHeaders() },
+  });
+  if (!res.ok) throw new Error(await parseApiError(res, "Fetch users failed"));
   return res.json();
 }
 

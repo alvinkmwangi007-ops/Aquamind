@@ -1,62 +1,121 @@
 # AquaMind
 
-AquaMind is a modern hydration tracker built with React and Vite. It helps users track daily water intake, review hydration history, and set personal hydration goals.
+AquaMind is a hydration tracker with a React frontend and a Flask API backend.
 
-## Features
+## Stack
 
-- Responsive React UI with clean, modern styling
-- Daily water intake logging
-- Hydration progress tracker
-- History view for past hydration values
-- Goal setting for daily water consumption
+- Frontend: React + Vite (in `aquamind/client`)
+- Backend: Flask + SQLAlchemy + Marshmallow + Flask-JWT-Extended (in `server`)
+- Database migrations: Flask-Migrate / Alembic
 
-## Getting Started
+## Local Setup
 
-### Prerequisites
+### 1) Backend
 
-- Node.js 18+ or the latest LTS version
-- npm
+From `server/`:
 
-### Install dependencies
+```bash
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+```
+
+Set env vars (PowerShell example):
+
+```powershell
+$env:FLASK_APP="app.py"
+$env:JWT_SECRET_KEY="change-me"
+# Optional (defaults to sqlite:///aquamind.db)
+$env:DATABASE_URL="sqlite:///aquamind.db"
+```
+
+Run migrations and seed:
+
+```bash
+flask db upgrade
+python seed.py
+```
+
+Start API:
+
+```bash
+python app.py
+```
+
+### 2) Frontend
+
+From `aquamind/client/`:
 
 ```bash
 npm install
 ```
 
-### Run locally
+Create `.env` with:
+
+```env
+VITE_API_URL=http://127.0.0.1:5000/api
+```
+
+Run app:
 
 ```bash
 npm run dev
 ```
 
-The application will start with Vite and be available at the local development URL shown in the terminal.
+## API Routes
 
-### Build for production
+All routes are prefixed with `/api`.
 
-```bash
-npm run build
-```
+### Auth + Users
 
-### Preview production build
+- `POST /users/register`
+- `POST /users/login`
+- `GET /users/me` (JWT required)
+- `GET /users?page=1&per_page=10` (JWT + admin)
+- `DELETE /users/<id>` (JWT + admin)
 
-```bash
-npm run preview
-```
+### Water Logs
 
-## Project structure
+- `GET /logs?page=1&per_page=10` (JWT)
+- `POST /logs` (JWT)
+- `PUT /logs/<id>` (JWT)
+- `DELETE /logs/<id>` (JWT)
+- `GET /logs/summary` (JWT, aggregation)
 
-- `index.html` — application entry HTML
-- `src/` — React application source code
-- `src/components/` — reusable UI components
-- `src/pages/` — route pages for Home, History, and Settings
-- `src/styles/` — component-level CSS files
-- `vite.config.js` — Vite configuration
+### Goals
 
-## GitHub
+- `GET /goals?page=1&per_page=10` (JWT)
+- `POST /goals` (JWT)
+- `PUT /goals/<id>` (JWT)
+- `DELETE /goals` (JWT)
+- `GET /goals/stats` (JWT, aggregation)
 
-This repository is configured as a standard Vite-powered React project and is ready for deployment.
+### Reminders
 
-## Notes
+- `GET /reminders?page=1&per_page=10` (JWT)
+- `POST /reminders` (JWT)
 
-- This README is intentionally concise and focused on common tasks for developers.
-- Update the project description, deployment instructions, and dependencies as needed for production.
+### Activities
+
+- `GET /activities?page=1&per_page=10` (JWT)
+- `POST /activities` (JWT)
+
+### Courses + Enrollments
+
+- `GET /courses?page=1&per_page=10` (JWT, join + aggregation)
+- `POST /courses` (JWT + admin)
+- `POST /courses/enroll` (JWT)
+- `GET /courses/enrollments?page=1&per_page=10` (JWT)
+- `GET /courses/enrollment-stats` (JWT, join + filter + aggregation)
+
+## Data Model Highlights
+
+- 1:1: `users` ↔ `profiles`
+- 1:many: `users` → `water_logs` / `goals` / `activities` / `reminders`
+- many:many: `users` ↔ `courses` via `enrollments`
+- Extra association attributes: `enrollments.grade`, `enrollments.enrolled_at`
+
+## Security Notes
+
+- `.env` is git-ignored.
+- API error messages are generic for auth failures and do not expose account identifiers.

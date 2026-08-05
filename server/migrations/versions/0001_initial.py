@@ -56,9 +56,9 @@ def upgrade():
         'activities',
         sa.Column('id', sa.Integer, primary_key=True),
         sa.Column('user_id', sa.Integer, sa.ForeignKey('users.id'), nullable=False),
-        sa.Column('name', sa.String(120), nullable=False),
-        sa.Column('duration_min', sa.Integer, nullable=True),
-        sa.Column('created_at', sa.DateTime, server_default=sa.text('CURRENT_TIMESTAMP')),
+        sa.Column('activity_type', sa.String(100), nullable=False),
+        sa.Column('duration_minutes', sa.Integer, nullable=False),
+        sa.Column('logged_at', sa.DateTime, server_default=sa.text('CURRENT_TIMESTAMP')),
     )
 
     op.create_table(
@@ -66,16 +66,15 @@ def upgrade():
         sa.Column('id', sa.Integer, primary_key=True),
         sa.Column('user_id', sa.Integer, sa.ForeignKey('users.id'), nullable=False),
         sa.Column('daily_target_ml', sa.Integer, nullable=False),
-        sa.Column('created_at', sa.DateTime, server_default=sa.text('CURRENT_TIMESTAMP')),
+        sa.Column('set_at', sa.DateTime, server_default=sa.text('CURRENT_TIMESTAMP')),
     )
 
     op.create_table(
         'reminders',
         sa.Column('id', sa.Integer, primary_key=True),
         sa.Column('user_id', sa.Integer, sa.ForeignKey('users.id'), nullable=False),
-        sa.Column('time', sa.Time, nullable=False),
-        sa.Column('message', sa.String(255), nullable=True),
-        sa.Column('created_at', sa.DateTime, server_default=sa.text('CURRENT_TIMESTAMP')),
+        sa.Column('message', sa.String(255), nullable=False),
+        sa.Column('remind_at', sa.DateTime, nullable=False),
     )
 
     op.create_table(
