@@ -51,12 +51,12 @@ def create_course():
 @course_bp.route("/enroll", methods=["POST"])
 @jwt_required()
 def enroll_course():
-    identity = get_jwt_identity()
+    user_id = int(get_jwt_identity())
     data = request.get_json()
     if not data.get("course_id"):
         return jsonify({"message": "course_id required"}), 400
 
-    enrollment = Enrollment(user_id=identity["id"], course_id=data["course_id"], grade=data.get("grade"))
+    enrollment = Enrollment(user_id=user_id, course_id=data["course_id"], grade=data.get("grade"))
     db.session.add(enrollment)
     db.session.commit()
     return jsonify(enrollment_schema.dump(enrollment)), 201
@@ -65,6 +65,6 @@ def enroll_course():
 @course_bp.route("/enrollments", methods=["GET"])
 @jwt_required()
 def get_enrollments():
-    identity = get_jwt_identity()
-    enrollments = Enrollment.query.filter_by(user_id=identity["id"]).all()
+    user_id = int(get_jwt_identity())
+    enrollments = Enrollment.query.filter_by(user_id=user_id).all()
     return jsonify(enrollments_schema.dump(enrollments))

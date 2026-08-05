@@ -31,8 +31,8 @@ def get_goals():
 @jwt_required()
 def create_goal():
     data = request.get_json()
-    identity = get_jwt_identity()
-    goal = Goal(user_id=identity["id"], daily_target_ml=data["daily_target_ml"])
+    user_id = int(get_jwt_identity())
+    goal = Goal(user_id=user_id, daily_target_ml=data["daily_target_ml"])
     db.session.add(goal)
     db.session.commit()
     return jsonify(goal_schema.dump(goal)), 201
@@ -41,6 +41,6 @@ def create_goal():
 @goal_bp.route("/stats", methods=["GET"])
 @jwt_required()
 def goal_stats():
-    identity = get_jwt_identity()
-    total_goals = Goal.query.filter_by(user_id=identity["id"]).count()
+    user_id = int(get_jwt_identity())
+    total_goals = Goal.query.filter_by(user_id=user_id).count()
     return jsonify({"total_goals": total_goals})

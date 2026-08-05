@@ -29,6 +29,9 @@ def register_user():
 @user_bp.route("/login", methods=["POST"])
 def login_user():
     data = request.get_json() or {}
+    if not data.get("username") or not data.get("password"):
+        return jsonify({"message": "username and password required"}), 400
+
     user = User.query.filter_by(username=data.get("username")).first()
     if not user or not user.check_password(data.get("password")):
         return jsonify({"message": "Invalid credentials"}), 401

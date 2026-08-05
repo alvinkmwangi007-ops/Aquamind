@@ -56,8 +56,8 @@ def logs_summary():
 @jwt_required()
 def create_log():
     data = request.get_json()
-    identity = get_jwt_identity()
-    log = WaterLog(user_id=identity["id"], amount_ml=data["amount_ml"])
+    user_id = int(get_jwt_identity())
+    log = WaterLog(user_id=user_id, amount_ml=data["amount_ml"])
     db.session.add(log)
     db.session.commit()
     return jsonify(log_schema.dump(log)), 201
@@ -67,8 +67,8 @@ def create_log():
 @jwt_required()
 def update_log(log_id):
     data = request.get_json()
-    identity = get_jwt_identity()
-    log = WaterLog.query.filter_by(id=log_id, user_id=identity["id"]).first_or_404()
+    user_id = int(get_jwt_identity())
+    log = WaterLog.query.filter_by(id=log_id, user_id=user_id).first_or_404()
     log.amount_ml = data.get("amount_ml", log.amount_ml)
     db.session.commit()
     return jsonify(log_schema.dump(log))
@@ -77,8 +77,8 @@ def update_log(log_id):
 @log_bp.route("/<int:log_id>", methods=["DELETE"])
 @jwt_required()
 def delete_log(log_id):
-    identity = get_jwt_identity()
-    log = WaterLog.query.filter_by(id=log_id, user_id=identity["id"]).first_or_404()
+    user_id = int(get_jwt_identity())
+    log = WaterLog.query.filter_by(id=log_id, user_id=user_id).first_or_404()
     db.session.delete(log)
     db.session.commit()
     return jsonify({"message": "Deleted"})

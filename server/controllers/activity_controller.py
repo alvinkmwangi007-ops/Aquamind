@@ -31,9 +31,9 @@ def get_activities():
 @jwt_required()
 def create_activity():
     data = request.get_json()
-    identity = get_jwt_identity()
+    user_id = int(get_jwt_identity())
     activity = Activity(
-        user_id=identity["id"],
+        user_id=user_id,
         activity_type=data["activity_type"],
         duration_minutes=data["duration_minutes"],
     )

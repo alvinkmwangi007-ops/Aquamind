@@ -1,5 +1,5 @@
 // API Service with CRUD operations using fetch + error handling
-const API_BASE_URL = import.meta.env.VITE_API_URL || "https://aquamind-3.onrender.com/api";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "https://aquamind-2.onrender.com/api";
 const GOAL_RECORDS_KEY = "aquamind_goal_records";
 
 function getStoredUserId() {
