@@ -1,37 +1,37 @@
 import os
 
 from flask import Flask, jsonify
-from flask_sqlalchemy import SQLAlchemy
-from flask_marshmallow import Marshmallow
-from flask_jwt_extended import JWTManager
 from flask_migrate import Migrate
-from flask_cors import CORS
+from server.controllers.activity_controller import activity_bp
+from server.controllers.course_controller import course_bp
+from server.controllers.goal_controller import goal_bp
+from server.controllers.log_controller import log_bp
+from server.controllers.reminder_controller import reminder_bp
+from server.controllers.user_controller import user_bp
+from server.extensions import cors, db, jwt, ma
 
-# 1. Initialize extensions globally
-db = SQLAlchemy()
-ma = Marshmallow()
-jwt = JWTManager()
 migrate = Migrate()
-cors = CORS()
 
 def create_app():
     app = Flask(__name__)
 
-    # 2. Add your application configuration here
-    app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL", "sqlite:///aquamind.db")
+    database_url = os.getenv("DATABASE_URL", "sqlite:///aquamind.db")
+    if database_url.startswith("postgres://"):
+        database_url = database_url.replace("postgres://", "postgresql://", 1)
+
+    app.config["SQLALCHEMY_DATABASE_URI"] = database_url
     app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY", "super-secret-key")
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-    # 3. Bind extensions to the app instance
     db.init_app(app)
     ma.init_app(app)
     jwt.init_app(app)
-    migrate.init_app(app)  # Binds migration engine to app and db
+    migrate.init_app(app, db)
 
-    # 4. Initialize CORS with explicit origins for the frontend and local dev
     allowed_origins = [
         "https://aquamind-3.vercel.app",
         "https://aquamind-2-client.vercel.app",
+        "https://aquamind-client-y6re.vercel.app",
         "https://aquamind-3.onrender.com",
         "http://localhost:5173",
         "http://127.0.0.1:5173",
@@ -42,7 +42,7 @@ def create_app():
 
     cors.init_app(
         app,
-        resources={r"/*": {"origins": allowed_origins}},
+        resources={r"/api/*": {"origins": allowed_origins}},
         allow_origin_regex=r"https://.*\.vercel\.app",
         methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
         allow_headers=["Content-Type", "Authorization"],
@@ -50,13 +50,21 @@ def create_app():
         expose_headers=["Content-Type", "Authorization"],
     )
 
-    # Example test route inside the /api/ ecosystem
-    @app.route('/api/logs', methods=['GET'])
-    def get_logs():
-        return jsonify({"status": "success", "message": "CORS preflight passed!"})
+    app.register_blueprint(user_bp, url_prefix="/api/users")
+    app.register_blueprint(log_bp, url_prefix="/api/logs")
+    app.register_blueprint(goal_bp, url_prefix="/api/goals")
+    app.register_blueprint(reminder_bp, url_prefix="/api/reminders")
+    app.register_blueprint(activity_bp, url_prefix="/api/activities")
+    app.register_blueprint(course_bp, url_prefix="/api/courses")
+
+    @app.route("/")
+    def healthcheck():
+        return jsonify({"status": "ok", "service": "aquamind-backend"}), 200
 
     return app
 
+
+app = create_app()
+
 if __name__ == "__main__":
-    app = create_app()
     app.run(debug=True)
