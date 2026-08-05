@@ -88,6 +88,40 @@ function asPaginated(items, page, perPage) {
   };
 }
 
+function normalizeTimestamp(value) {
+  if (!value) return new Date().toISOString();
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return new Date().toISOString();
+  return parsed.toISOString();
+}
+
+function normalizeLogEntry(log) {
+  if (!log || typeof log !== "object") return log;
+
+  const timestamp = normalizeTimestamp(log.logged_at || log.date || log.createdAt);
+  return {
+    ...log,
+    logged_at: timestamp,
+    date: log.date || timestamp,
+    createdAt: log.createdAt || timestamp,
+  };
+}
+
+function normalizeLogPayload(payload) {
+  if (Array.isArray(payload)) {
+    return payload.map(normalizeLogEntry);
+  }
+
+  if (payload && Array.isArray(payload.data)) {
+    return {
+      ...payload,
+      data: payload.data.map(normalizeLogEntry),
+    };
+  }
+
+  return payload;
+}
+
 // ============================================================================
 // Hydration Logs CRUD
 // ============================================================================
@@ -96,7 +130,7 @@ function asPaginated(items, page, perPage) {
  * Fetch all hydration logs
  */
 export async function fetchLogs(page = 1, per_page = 20) {
-  const qs = `?page=${page}&per_page=${per_page}`;
+  const qs = `/?page=${page}&per_page=${per_page}`;
   try {
     const response = await fetch(`${API_BASE_URL}/logs${qs}`, {
       headers: { ...authHeaders() },
@@ -104,7 +138,8 @@ export async function fetchLogs(page = 1, per_page = 20) {
     if (!response.ok) {
       throw new Error(await parseApiError(response, "Failed to fetch logs"));
     }
-    return response.json();
+    const payload = await response.json();
+    return normalizeLogPayload(payload);
   } catch (error) {
     if (error.message === "Authentication required" || error.message === "Invalid token") {
       throw error;
@@ -118,7 +153,7 @@ export async function fetchLogs(page = 1, per_page = 20) {
  */
 export async function createLog(amount, date = new Date().toISOString()) {
   try {
-    const response = await fetch(`${API_BASE_URL}/logs`, {
+    const response = await fetch(`${API_BASE_URL}/logs/`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...authHeaders() },
       body: JSON.stringify({ amount_ml: amount, user_id: getStoredUserId() || 1 }),
@@ -126,7 +161,8 @@ export async function createLog(amount, date = new Date().toISOString()) {
     if (!response.ok) {
       throw new Error(await parseApiError(response, "Failed to create log"));
     }
-    return response.json();
+    const payload = await response.json();
+    return normalizeLogEntry(payload);
   } catch {
     const localLog = {
       id: Date.now(),
@@ -134,6 +170,7 @@ export async function createLog(amount, date = new Date().toISOString()) {
       amount_ml: amount,
       date,
       createdAt: date,
+      logged_at: date,
       user_id: getStoredUserId() || 1,
     };
     const existing = getLogs();
@@ -154,7 +191,8 @@ export async function updateLog(id, amount) {
   if (!response.ok) {
     throw new Error(await parseApiError(response, "Failed to update log"));
   }
-  return response.json();
+  const payload = await response.json();
+  return normalizeLogEntry(payload);
 }
 
 /**
@@ -181,7 +219,7 @@ export async function deleteLog(id) {
 export async function fetchGoal() {
   const userId = getStoredUserId();
   try {
-    const response = await fetch(`${API_BASE_URL}/goals`, { headers: { ...authHeaders() } });
+    const response = await fetch(`${API_BASE_URL}/goals/`, { headers: { ...authHeaders() } });
     if (!response.ok) {
       throw new Error(await parseApiError(response, "Failed to fetch goal"));
     }
@@ -206,7 +244,7 @@ export async function fetchGoal() {
 export async function setGoal(goalAmount, setAt = new Date().toISOString()) {
   const userId = getStoredUserId();
   try {
-    const response = await fetch(`${API_BASE_URL}/goals`, {
+    const response = await fetch(`${API_BASE_URL}/goals/`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...authHeaders() },
       body: JSON.stringify({ daily_target_ml: goalAmount, set_at: setAt }),
@@ -228,7 +266,7 @@ export async function setGoal(goalAmount, setAt = new Date().toISOString()) {
  * Delete user's hydration goal
  */
 export async function deleteGoal() {
-  const response = await fetch(`${API_BASE_URL}/goals`, {
+  const response = await fetch(`${API_BASE_URL}/goals/`, {
     method: "DELETE",
     headers: { ...authHeaders() },
   });
@@ -271,7 +309,7 @@ export async function currentUser() {
 }
 
 export async function fetchUsers(page = 1, per_page = 50) {
-  const res = await fetch(`${API_BASE_URL}/users?page=${page}&per_page=${per_page}`, {
+  const res = await fetch(`${API_BASE_URL}/users/?page=${page}&per_page=${per_page}`, {
     headers: { ...authHeaders() },
   });
   if (!res.ok) throw new Error(await parseApiError(res, "Fetch users failed"));
@@ -293,7 +331,10 @@ export function saveLogs(logs) {
  * Get logs from localStorage as fallback
  */
 export function getLogs() {
-  return JSON.parse(localStorage.getItem("aquamind_logs")) || [];
+  const raw = JSON.parse(localStorage.getItem("aquamind_logs")) || [];
+  const normalized = raw.map(normalizeLogEntry);
+  localStorage.setItem("aquamind_logs", JSON.stringify(normalized));
+  return normalized;
 }
 
 /**

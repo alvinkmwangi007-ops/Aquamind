@@ -6,6 +6,11 @@ import GoalSetting from "../GoalSetting";
 import { fetchLogs, fetchGoal, createLog, setGoal, getLogs as getLogsLocalStorage, getGoalRecord, getGoalRecords } from "../../api";
 import { useAuth } from "../../auth";
 
+function toSafeDate(log) {
+  const parsed = new Date(log?.logged_at || log?.date || log?.createdAt);
+  return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
+}
+
 export default function Home() {
   const { user, users = [] } = useAuth();
   const [current, setCurrent] = useState(0);
@@ -40,7 +45,7 @@ export default function Home() {
         const allLogs = fetched.data || fetched;
         const today = new Date().toDateString();
         const todayTotal = allLogs
-          .filter((log) => new Date(log.date || log.createdAt).toDateString() === today)
+          .filter((log) => toSafeDate(log).toDateString() === today)
           .reduce((sum, log) => sum + (log.amount_ml || log.amount || 0), 0);
         setCurrent(todayTotal);
         setLogs(allLogs);
@@ -49,7 +54,7 @@ export default function Home() {
         const localLogs = getLogsLocalStorage();
         const today = new Date().toDateString();
         const todayTotal = localLogs
-          .filter((log) => new Date(log.date).toDateString() === today)
+          .filter((log) => toSafeDate(log).toDateString() === today)
           .reduce((sum, log) => sum + log.amount, 0);
         setCurrent(todayTotal);
         setLogs(localLogs);
@@ -236,9 +241,9 @@ export default function Home() {
                 <div key={log.id || index} className="log-item">
                   <div>
                     <strong>{log.amount_ml || log.amount} ml</strong>
-                    <p>{new Date(log.date || log.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</p>
+                    <p>{toSafeDate(log).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</p>
                   </div>
-                  <span>{new Date(log.date || log.createdAt).toLocaleDateString()}</span>
+                  <span>{toSafeDate(log).toLocaleDateString()}</span>
                 </div>
               ))
             )}

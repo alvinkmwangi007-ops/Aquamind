@@ -10,3 +10,4 @@ python-dotenv==1.0.0
 alembic==1.11.3
 gunicorn==26.0.0
 Faker==23.3.0
+bcrypt==4.2.0

@@ -10,6 +10,7 @@ from server.controllers.log_controller import log_bp
 from server.controllers.reminder_controller import reminder_bp
 from server.controllers.user_controller import user_bp
 from server.extensions import cors, db, jwt, ma
+from server.models.user import User
 
 migrate = Migrate()
 
@@ -30,11 +31,42 @@ def create_app():
     jwt.init_app(app)
     migrate.init_app(app, db)
 
+    # Safety net for environments where migrations were not run yet.
+    with app.app_context():
+        db.create_all()
+
+        # Demo accounts for presentation logins.
+        demo_accounts = [
+            {"username": "admin", "email": "admin@test.com", "password": "admin123", "role": "admin"},
+            {"username": "presenter", "email": "presenter@test.com", "password": "pass1234", "role": "user"},
+            {"username": "userone", "email": "user1@test.com", "password": "user123", "role": "user"},
+            {"username": "usertwo", "email": "user2@test.com", "password": "user123", "role": "user"},
+            {"username": "user", "email": "user@test.com", "password": "user123", "role": "user"},
+        ]
+
+        for account in demo_accounts:
+            existing = User.query.filter(
+                (User.username == account["username"]) | (User.email == account["email"])
+            ).first()
+
+            if not existing:
+                existing = User(username=account["username"], email=account["email"], role=account["role"])
+                db.session.add(existing)
+
+            existing.username = account["username"]
+            existing.email = account["email"]
+            existing.role = account["role"]
+            existing.set_password(account["password"])
+
+        db.session.commit()
+
     allowed_origins = [
+        "https://aquamind-eight.vercel.app",
         "https://aquamind-3.vercel.app",
         "https://aquamind-2-client.vercel.app",
         "https://aquamind-client-y6re.vercel.app",
         "https://aquamind-3.onrender.com",
+        r"https://.*\.vercel\.app",
         "http://localhost:5173",
         "http://127.0.0.1:5173",
     ]
@@ -45,7 +77,6 @@ def create_app():
     cors.init_app(
         app,
         resources={r"/api/*": {"origins": allowed_origins}},
-        allow_origin_regex=r"https://.*\.vercel\.app",
         methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
         allow_headers=["Content-Type", "Authorization"],
         supports_credentials=True,

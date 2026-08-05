@@ -4,6 +4,11 @@ import Header from "../Header";
 import { deleteLog, fetchLogs, getLogs as getLogsLocalStorage, updateLog } from "../../api";
 import { useAuth } from "../../auth";
 
+function toSafeDate(log) {
+  const parsed = new Date(log?.logged_at || log?.date || log?.createdAt);
+  return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
+}
+
 function buildLastSevenDaySeries(logs, userId) {
   const now = new Date();
   const days = [];
@@ -21,7 +26,7 @@ function buildLastSevenDaySeries(logs, userId) {
   logs
     .filter((entry) => Number(entry.user_id || 1) === userId)
     .forEach((entry) => {
-      const key = new Date(entry.date || entry.createdAt).toDateString();
+      const key = toSafeDate(entry).toDateString();
       if (dayMap[key]) {
         dayMap[key].total += Number(entry.amount_ml || entry.amount || 0);
       }
@@ -186,7 +191,7 @@ export default function History() {
                     <div key={entry.id} className="log-item" style={{ alignItems: "center" }}>
                       <div>
                         <strong>{entry.amount_ml || entry.amount} ml</strong>
-                        <p>{new Date(entry.logged_at || entry.date || entry.createdAt).toLocaleString()}</p>
+                        <p>{toSafeDate(entry).toLocaleString()}</p>
                       </div>
                       {isEditing ? (
                         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
